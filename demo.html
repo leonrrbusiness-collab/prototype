@@ -1,0 +1,1460 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DataMax 人群包定期推送（重构版 V2.0）· 界面原型 Demo</title>
+<style>
+:root{
+  --brand:#1F6BFF;
+  --brand-weak:#EAF1FF;
+  --brand-dark:#1653CC;
+  --text:#1D2129;
+  --text-2:#4E5969;
+  --text-3:#86909C;
+  --text-4:#C9CDD4;
+  --border:#E5E6EB;
+  --border-2:#F2F3F5;
+  --bg:#F5F6F8;
+  --white:#fff;
+  --success:#00B42A;
+  --success-bg:#E8FFEA;
+  --warn:#FF7D00;
+  --warn-bg:#FFF7E8;
+  --danger:#F53F3F;
+  --danger-bg:#FFECE8;
+  --purple:#722ED1;
+  --purple-bg:#F5F0FF;
+  --new:#FF7D00;
+  --radius:6px;
+  --shadow:0 4px 16px rgba(0,0,0,.08);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.16);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+  background:var(--bg);color:var(--text);font-size:13px;line-height:1.6;-webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select{font-family:inherit;font-size:inherit;color:inherit}
+
+/* ============ 改动图例条 ============ */
+.legend{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  background:#2B3444;color:#fff;padding:8px 20px;font-size:12px;
+}
+.legend b{font-size:13px;font-weight:600}
+.legend .sp{flex:1}
+.legend .chip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);padding:3px 10px;border-radius:20px}
+.legend .dot{width:8px;height:8px;border-radius:50%;background:var(--new)}
+.legend label{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+
+/* ============ 布局 ============ */
+.app{display:flex;min-height:calc(100vh - 37px)}
+.sidebar{width:196px;flex:none;background:var(--white);border-right:1px solid var(--border);padding:14px 0;display:flex;flex-direction:column;position:sticky;top:37px;height:calc(100vh - 37px);align-self:flex-start}
+.nav-scroll{flex:1;overflow-y:auto;min-height:0}
+.logo{display:flex;align-items:center;gap:8px;padding:0 18px 16px;font-weight:700;font-size:15px;letter-spacing:.5px}
+.logo i{width:22px;height:22px;border-radius:5px;background:linear-gradient(135deg,#1F6BFF,#5B8DEF);display:block}
+.nav-group{padding:10px 18px 4px;font-size:11px;color:var(--text-3);letter-spacing:.5px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 18px;color:var(--text-2);cursor:pointer;border-left:2px solid transparent}
+.nav-item:hover{background:var(--border-2)}
+.nav-item.active{color:var(--brand);background:var(--brand-weak);border-left-color:var(--brand);font-weight:500}
+.nav-item .ic{width:14px;text-align:center;opacity:.8}
+.user-center{border-top:1px solid var(--border-2);padding:8px;flex:none}
+.uc-trigger{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--radius);cursor:pointer}
+.uc-trigger:hover{background:var(--border-2)}
+.uc-avatar{width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-size:11px;flex:none}
+.uc-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--text-2)}
+.uc-caret{color:var(--text-3);font-size:10px;flex:none}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{height:48px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px}
+.topbar .ws{color:var(--text-2)}
+.topbar .sp{flex:1}
+.topbar .quota{color:var(--text-3);font-size:12px}
+.content{padding:16px 20px 60px;flex:1}
+.page{display:none}
+.page.active{display:block}
+
+/* ============ 通用组件 ============ */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px}
+.card-hd{padding:12px 16px;border-bottom:1px solid var(--border-2);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.card-hd h3{font-size:14px;font-weight:600}
+.card-bd{padding:16px}
+.page-title{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.page-title h2{font-size:18px;font-weight:600}
+.page-title p{color:var(--text-3);font-size:12px}
+
+.btn{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 14px;border-radius:var(--radius);border:1px solid var(--border);background:var(--white);color:var(--text-2);transition:.15s}
+.btn:hover{border-color:var(--brand);color:var(--brand)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:var(--brand-dark);border-color:var(--brand-dark);color:#fff}
+.btn.danger{color:var(--danger);border-color:#FFD3CC}
+.btn.danger:hover{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn.sm{height:26px;padding:0 10px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed;border-color:var(--border);color:var(--text-3)}
+.link{color:var(--brand);cursor:pointer}
+.link:hover{text-decoration:underline}
+.link.disabled{color:var(--text-4);cursor:not-allowed;text-decoration:none}
+
+.tag{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 7px;border-radius:3px;font-size:12px;line-height:1;background:var(--border-2);color:var(--text-2)}
+.tag.blue{background:var(--brand-weak);color:var(--brand)}
+.tag.green{background:var(--success-bg);color:var(--success)}
+.tag.orange{background:var(--warn-bg);color:var(--warn)}
+.tag.red{background:var(--danger-bg);color:var(--danger)}
+.tag.gray{background:#F2F3F5;color:var(--text-3)}
+.tag.purple{background:var(--purple-bg);color:var(--purple)}
+
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-weight:500;color:var(--text-2);background:#FAFBFC;padding:10px 12px;font-size:12px;white-space:nowrap;border-bottom:1px solid var(--border)}
+td{padding:11px 12px;border-bottom:1px solid var(--border-2);vertical-align:top}
+tbody tr:hover td{background:#FAFBFF}
+.tbl-wrap{overflow-x:auto}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--text-3)}
+.small{font-size:12px}
+.xs{font-size:11px}
+.up{color:var(--success)}
+.down{color:var(--danger)}
+
+/* 表单 */
+.form-row{display:flex;gap:12px;margin-bottom:16px}
+.form-row:last-child{margin-bottom:0}
+.form-label{width:104px;flex:none;text-align:right;color:var(--text-2);padding-top:5px}
+.form-label .req{color:var(--danger);margin-right:2px}
+.form-ctrl{flex:1;min-width:0}
+.inp,.sel{height:30px;border:1px solid var(--border);border-radius:var(--radius);padding:0 10px;background:var(--white);width:100%}
+.inp:focus,.sel:focus{outline:none;border-color:var(--brand)}
+.sel{width:auto;min-width:120px;cursor:pointer}
+.hint{color:var(--text-3);font-size:12px;margin-top:6px}
+.radios{display:flex;gap:8px;flex-wrap:wrap}
+.radio{display:inline-flex;align-items:center;justify-content:center;min-width:74px;height:30px;padding:0 14px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;background:var(--white);color:var(--text-2);transition:.15s}
+.radio:hover{border-color:var(--brand);color:var(--brand)}
+.radio.on{border-color:var(--brand);color:var(--brand);background:var(--brand-weak);font-weight:500}
+.switch{position:relative;width:40px;height:20px;border-radius:20px;background:var(--text-4);cursor:pointer;transition:.2s;flex:none}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s}
+.switch.on{background:var(--brand)}
+.switch.on::after{left:22px}
+.switch-row{display:flex;align-items:center;gap:10px}
+input[type=date]{height:30px;border:1px solid var(--border);border-radius:var(--radius);padding:0 10px;background:#fff;width:100%;color:var(--text)}
+input[type=date]:focus{outline:none;border-color:var(--brand)}
+.readonly-val{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid var(--border-2);border-radius:var(--radius);background:#F7F8FA;color:var(--text);font-variant-numeric:tabular-nums}
+.lock{color:var(--text-3);font-size:11px}
+
+/* 提示条 */
+.alert{display:flex;gap:8px;padding:9px 12px;border-radius:var(--radius);font-size:12px;line-height:1.6;background:var(--brand-weak);color:var(--text-2);border:1px solid #D6E4FF}
+.alert .ai{color:var(--brand);flex:none}
+.alert.warn{background:var(--warn-bg);border-color:#FFE4BA}
+.alert.warn .ai{color:var(--warn)}
+.alert.danger{background:var(--danger-bg);border-color:#FFCDC5}
+.alert.danger .ai{color:var(--danger)}
+.alert.gray{background:#F7F8FA;border-color:var(--border)}
+.alert.gray .ai{color:var(--text-3)}
+
+/* NEW / 改动高亮 */
+.new-badge{display:inline-flex;align-items:center;height:16px;padding:0 5px;border-radius:3px;background:var(--new);color:#fff;font-size:10px;font-weight:600;letter-spacing:.3px;transform:translateY(-1px)}
+.new-badge.v1{background:#8B93A1}
+.hl{position:relative}
+body.show-hl .hl{outline:1px dashed var(--new);outline-offset:2px;border-radius:4px;background:rgba(255,125,0,.035)}
+body.show-hl th.hl,body.show-hl td.hl{outline-offset:-1px;background:rgba(255,125,0,.05)}
+body:not(.show-hl) .new-badge{display:none}
+
+/* 弹窗 */
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:none;align-items:center;justify-content:center;padding:24px}
+.mask.open{display:flex}
+.modal{background:var(--white);border-radius:8px;box-shadow:var(--shadow-lg);width:620px;max-width:100%;max-height:92vh;display:flex;flex-direction:column}
+.modal-hd{padding:16px 20px;border-bottom:1px solid var(--border-2);display:flex;align-items:center;gap:8px}
+.modal-hd h3{font-size:15px;font-weight:600}
+.modal-hd .x{margin-left:auto;color:var(--text-3);font-size:18px;line-height:1}
+.modal-bd{padding:20px;overflow-y:auto}
+.modal-ft{padding:12px 20px;border-top:1px solid var(--border-2);display:flex;justify-content:flex-end;gap:8px}
+.modal-ft .sp{flex:1}
+
+/* 抽屉 */
+.drawer-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:110;display:none}
+.drawer-mask.open{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:1120px;max-width:96vw;background:var(--white);box-shadow:var(--shadow-lg);z-index:111;transform:translateX(100%);transition:transform .22s ease;display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer-hd{padding:16px 20px;border-bottom:1px solid var(--border-2)}
+.drawer-hd .row1{display:flex;align-items:center;gap:10px}
+.drawer-hd h3{font-size:15px;font-weight:600}
+.drawer-hd .x{margin-left:auto;color:var(--text-3);font-size:18px;line-height:1}
+.drawer-bd{padding:16px 20px 40px;overflow-y:auto;flex:1}
+
+/* 概览指标 */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px}
+.stat{background:var(--white);padding:12px 14px}
+.stat .k{color:var(--text-3);font-size:12px;margin-bottom:4px}
+.stat .v{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+.filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+
+/* 展开明细 */
+.sub{background:#FAFBFC;padding:0}
+.sub-inner{padding:12px 14px 14px}
+.sub-title{font-size:12px;color:var(--text-2);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.sub table th{background:#F2F4F7;font-size:11px;padding:7px 10px}
+.sub table td{padding:8px 10px;font-size:12px;background:var(--white)}
+.expander{display:inline-flex;width:16px;height:16px;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:3px;color:var(--text-3);font-size:10px;cursor:pointer;background:#fff;margin-right:6px}
+.expander:hover{border-color:var(--brand);color:var(--brand)}
+
+/* toast */
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-12px);background:rgba(29,33,41,.92);color:#fff;padding:9px 16px;border-radius:var(--radius);z-index:300;opacity:0;transition:.2s;pointer-events:none;font-size:13px;max-width:80vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* 新建人群页 */
+.create-head{display:flex;align-items:flex-end;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+.field-name .lb{font-size:12px;color:var(--text-2);margin-bottom:4px}
+.name-wrap{position:relative;width:300px}
+.name-wrap .inp{padding-right:44px}
+.name-wrap .cnt{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text-4);font-size:11px}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:14px}
+.tab{padding:8px 18px;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent}
+.tab.on{color:var(--brand);border-bottom-color:var(--brand);font-weight:500}
+.create-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start;margin-bottom:14px}
+.section-note{font-size:12px;color:var(--text-3);padding:6px 10px;background:#FAFBFC;border-left:2px solid var(--border);margin-bottom:12px}
+.dim-box{border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;background:#fff}
+.fake{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius);height:30px;display:flex;align-items:center;padding:0 10px;color:var(--text-3);justify-content:space-between}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tree-t{font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.tree-t .k{font-size:10px;color:var(--text-4);letter-spacing:1px;font-weight:400}
+.tree-sub{font-size:12px;color:var(--text-3);margin:10px 0 6px}
+.tree-group{border-top:1px solid var(--border-2);padding-top:10px;margin-top:10px}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.seg span{padding:4px 12px;cursor:pointer;background:#fff;font-size:12px;color:var(--text-2)}
+.seg span+span{border-left:1px solid var(--border)}
+.seg span.on{background:var(--brand-weak);color:var(--brand);font-weight:500}
+.pool-box{border:1px solid var(--border);border-radius:var(--radius);padding:12px;background:#fff;margin-bottom:10px}
+.pool-chip{border:1px solid var(--brand);background:var(--brand-weak);border-radius:var(--radius);padding:8px 10px;font-size:12px;color:var(--text-2);margin-top:10px;line-height:1.7}
+.add-pool{border:1px dashed var(--border);border-radius:var(--radius);padding:10px;text-align:center;color:var(--text-3);font-size:12px;cursor:pointer}
+.bottom-bar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:14px;align-items:stretch}
+.bb-cell{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:10px}
+.expr{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius);padding:10px;font-size:12px;color:var(--text-2);line-height:1.7}
+.result-num{font-size:24px;font-weight:600;color:var(--brand);font-variant-numeric:tabular-nums}
+
+/* ★ 新增：推送模式卡片 */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mode-card{border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;cursor:pointer;background:#fff;transition:.15s}
+.mode-card:hover{border-color:var(--brand)}
+.mode-card.on{border-color:var(--brand);background:var(--brand-weak);box-shadow:0 0 0 2px rgba(31,107,255,.08)}
+.mode-card .mt{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px}
+.mode-card .rd{width:14px;height:14px;border-radius:50%;border:1px solid var(--text-4);flex:none;display:grid;place-items:center;background:#fff}
+.mode-card.on .rd{border-color:var(--brand)}
+.mode-card.on .rd::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--brand)}
+.mode-card .md{font-size:12px;color:var(--text-3);margin-top:7px;line-height:1.65}
+.mode-card .mtags{margin-top:9px;display:flex;gap:5px;flex-wrap:wrap}
+
+/* ★ 新增：平台 + 账户选择 */
+.plat-box{border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px;background:#fff}
+.plat-hd{display:flex;align-items:center;gap:8px;cursor:pointer}
+.plat-hd .nm{font-weight:500}
+.plat-hd .sp{flex:1}
+.cb{width:14px;height:14px;border:1px solid var(--text-4);border-radius:3px;display:inline-grid;place-items:center;cursor:pointer;flex:none;background:#fff;color:#fff;font-size:10px;line-height:1}
+.cb.on{background:var(--brand);border-color:var(--brand)}
+.acc-list{margin-top:8px;padding-left:22px;border-top:1px dashed var(--border-2);padding-top:8px}
+.acc{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;color:var(--text-2)}
+.acc .sp{flex:1}
+.acc .q{font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums}
+
+/* ★ 新增：推送计划时间线 */
+.plan{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px}
+.plan-top{display:flex;gap:28px;flex-wrap:wrap;margin-bottom:10px}
+.plan-top .k{color:var(--text-3);font-size:12px}
+.plan-top .v{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.tl{border-top:1px dashed var(--border);padding-top:8px}
+.tl-i{display:flex;gap:12px;font-size:12px;padding:4px 0;align-items:center}
+.tl-i .no{width:52px;color:var(--text-3);flex:none}
+.tl-i .win{width:210px;flex:none;font-variant-numeric:tabular-nums;color:var(--text)}
+.tl-i .run{color:var(--text-3);font-variant-numeric:tabular-nums}
+.tl-i.more{color:var(--text-4)}
+
+/* 列表父子行 */
+.row-child td{background:#FCFDFF}
+.row-child td:first-child{padding-left:30px}
+.child-mark{display:inline-flex;align-items:center;height:16px;padding:0 5px;border-radius:3px;background:var(--purple-bg);color:var(--purple);font-size:10px;margin-left:6px}
+.exp-cell{display:flex;align-items:flex-start;gap:6px}
+
+@media (max-width:1100px){
+  .create-grid,.bottom-bar,.mode-grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body class="show-hl">
+
+<div class="legend">
+  <b>DataMax · 人群包定期推送（重构版 V2.0）界面原型</b>
+  <span class="chip"><span class="dot"></span> 橙色虚线 / NEW = 相对 V1「定期更新」的新增或改动</span>
+  <span class="chip">灰色区块 = 现有功能（示意）</span>
+  <span class="sp"></span>
+  <span class="chip">演示基准日 2026-08-10</span>
+  <label><input type="checkbox" id="hlToggle" checked> 高亮本次改动</label>
+</div>
+
+<div class="app">
+  <!-- 左侧导航 -->
+  <aside class="sidebar">
+    <div class="nav-scroll">
+      <div class="logo"><i></i> DATAMAX</div>
+      <div class="nav-item"><span class="ic">▤</span> 数据概览</div>
+      <div class="nav-item"><span class="ic">🔗</span> 监测链接</div>
+      <div class="nav-item"><span class="ic">◫</span> 数据分析</div>
+      <div class="nav-group">数据应用</div>
+      <div class="nav-item" data-page="page-create"><span class="ic">＋</span> 新建人群</div>
+      <div class="nav-item active" data-page="page-list"><span class="ic">☰</span> 人群列表</div>
+      <div class="nav-item" data-page="page-push"><span class="ic">↗</span> 人群推送详情</div>
+      <div class="nav-group">AGENT</div>
+      <div class="nav-item"><span class="ic">◈</span> AGENT 接入</div>
+    </div>
+    <div class="user-center">
+      <div class="uc-trigger" onclick="toast('通知中心为独立需求，原型见 demo.html')">
+        <span class="uc-avatar">L</span>
+        <span class="uc-name">LEO.EYESONU</span>
+        <span class="uc-caret">⌃</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="ws">默认工作空间</span>
+      <span class="sp"></span>
+      <span class="quota">腾讯如翼 934/1000 ｜ 巨量云图 612/1000</span>
+    </div>
+
+    <div class="content">
+
+      <!-- ==================== 页面1：新建人群 ==================== -->
+      <section class="page" id="page-create">
+        <div class="page-title"><h2>新建人群</h2></div>
+
+        <div class="create-head">
+          <div class="field-name">
+            <div class="lb"><span style="color:#F53F3F">*</span> 人群包名称</div>
+            <div class="name-wrap">
+              <input class="inp" id="pkgName" maxlength="20" value="秋季新车_近7天曝光" placeholder="如：高意向试驾人群">
+              <span class="cnt" id="nameCnt">9/20</span>
+            </div>
+          </div>
+          <div class="field-name">
+            <div class="lb">所选活动的活动结束日期（主数据）</div>
+            <div class="readonly-val" id="actEndShow">2026-09-10</div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab on">新建人群</div>
+          <div class="tab">交并运算</div>
+        </div>
+
+        <div class="create-grid">
+          <!-- 左：构建人群条件组 -->
+          <div class="card">
+            <div class="card-hd"><h3>构建人群条件组</h3><span class="muted small">当前筛选：运算池 1</span></div>
+            <div class="card-bd">
+              <div class="section-note">一个条件组包含完整圈选路径，可与其他条件组进行交集或并集；按顺序完成设置，再补充可选维度</div>
+
+              <div class="dim-box">
+                <div class="tree-t">选择品牌 <span class="k">必选</span></div>
+                <div class="fake">品牌A <span>⌄</span></div>
+                <div class="tree-t" style="margin-top:14px">选择活动 <span class="k">必选</span></div>
+                <div class="fake">2026 秋季新车上市（2026-06-01 ~ 2026-09-10） <span>⌄</span></div>
+                <div class="tree-t" style="margin-top:14px">选择数据行为 <span class="k">必选</span></div>
+                <div class="fake">曝光 <span>⌄</span></div>
+              </div>
+
+              <div class="dim-box">
+                <div class="tree-t">监测组、触发时间与频次</div>
+                <div class="small muted" style="margin-bottom:4px">监测组</div>
+                <div class="fake">全部监测组 <span>⌄</span></div>
+
+                <div class="grid2" style="margin-top:10px">
+                  <div>
+                    <div class="small muted" style="margin-bottom:4px">开始日期 <span class="muted xs">（非必填）</span></div>
+                    <input type="date" id="startDate" value="2026-07-01">
+                  </div>
+                  <div>
+                    <div class="small muted" style="margin-bottom:4px">结束日期 <span class="muted xs">（非必填）</span></div>
+                    <input type="date" id="endDate" value="2026-08-09">
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+                  <button class="btn sm" onclick="clearRange()">清空圈选日期</button>
+                  <span class="hint" style="margin:0">清空后＝圈选条件内的全部人群；同时会联动「推送开始日期」的默认值</span>
+                </div>
+                <div class="alert gray hl" style="margin-top:10px">
+                  <span class="ai">ⓘ</span>
+                  <span>V1 的「结束日期最多可选至当前日期 + 90 天」限制<b>已取消</b>，日期选择恢复为现有逻辑。 <span class="new-badge v1">V1 已废除</span></span>
+                </div>
+
+                <div style="margin-top:10px">
+                  <div class="small muted" style="margin-bottom:4px">曝光/点击频次</div>
+                  <div class="radios"><span class="radio on">不限</span><span class="radio">自定义</span></div>
+                </div>
+              </div>
+
+              <div class="dim-box">
+                <div class="tree-t">细分条件 <span class="k">选填</span></div>
+                <div class="tree-group" style="border-top:none;padding-top:0;margin-top:0">
+                  <div class="tree-t">用户属性 <span class="k">USER</span></div>
+                  <div class="tree-sub">地域属性</div>
+                  <div class="fake">地区：北京、上海、广东 <span>⌄</span></div>
+                </div>
+                <div class="tree-group">
+                  <div class="tree-t">设备属性 <span class="k">ASSETS</span></div>
+                  <div class="grid2">
+                    <div class="fake">设备形态：不限 <span>⌄</span></div>
+                    <div class="fake">设备类型：不限 <span>⌄</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右：运算池 -->
+          <div>
+            <div class="card">
+              <div class="card-hd"><h3>运算池</h3></div>
+              <div class="card-bd">
+                <div class="pool-box">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                    <b class="small">运算池 1</b><span class="tag blue">加入目标</span>
+                  </div>
+                  <div class="seg"><span class="on">池内并集</span><span>池内交集</span></div>
+                  <div class="pool-chip">
+                    条件组 1：品牌A · 2026 秋季新车上市 · 曝光<br>
+                    <span class="muted" id="poolRange">2026-07-01 ~ 2026-08-09 · 北京/上海/广东</span>
+                  </div>
+                </div>
+                <div class="add-pool">＋ 添加运算池（最多 4 个，可组合交集或并集）</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ★ 重构板块：定期推送设置 -->
+        <div class="card hl" id="periodCard">
+          <div class="card-hd">
+            <h3>定期推送设置</h3>
+            <span class="new-badge">重构</span>
+            <span class="muted xs">原「定期更新设置」</span>
+            <span style="flex:1"></span>
+            <div class="switch-row">
+              <span class="small muted">定期推送</span>
+              <div class="switch on" id="swCreate"></div>
+              <span class="small" id="swCreateTxt">已开启</span>
+            </div>
+          </div>
+          <div class="card-bd" id="periodFields">
+
+            <div class="form-row">
+              <div class="form-label"><span class="req">*</span>推送模式</div>
+              <div class="form-ctrl">
+                <div class="mode-grid">
+                  <div class="mode-card on" data-mode="new" onclick="pickMode('new')">
+                    <div class="mt"><span class="rd"></span> ① 定期圈新包并推送</div>
+                    <div class="md">每个周期按相同条件<b>新圈一个包</b>（仅含该周期内的新增人群）并推送。适用于「每期只投最近 N 天新曝光人群」。</div>
+                    <div class="mtags">
+                      <span class="tag purple">滚动不重叠窗口</span>
+                      <span class="tag orange">每期新建平台包</span>
+                      <span class="tag gray">广告计划需绑新包</span>
+                    </div>
+                  </div>
+                  <div class="mode-card" data-mode="update" onclick="pickMode('update')">
+                    <div class="mt"><span class="rd"></span> ② 定期更新原包并推送</div>
+                    <div class="md">每个周期对当前人群包做<b>全量重算</b>（人群持续累积变大），并全量覆盖平台侧同一人群包。适用于「持续维护一个大盘人群」。</div>
+                    <div class="mtags">
+                      <span class="tag purple">累积窗口</span>
+                      <span class="tag blue">平台包 ID 不变</span>
+                      <span class="tag green">无需重新绑定</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="hint">⚠ <b>推送模式在人群包创建提交后不可修改</b>，如需变更请新建人群</div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-label"><span class="req">*</span>推送频率</div>
+              <div class="form-ctrl">
+                <div class="radios" id="freqRadios">
+                  <span class="radio" data-freq="1">每天</span>
+                  <span class="radio on" data-freq="7">每 7 天</span>
+                  <span class="radio" data-freq="15">每 15 天</span>
+                </div>
+                <div class="hint">固定间隔天数（非自然周/月）。每期在<b>执行日的次日 03:00</b> 跑批，以保证执行日当天数据完整</div>
+              </div>
+            </div>
+
+            <div class="form-row" id="rowStart">
+              <div class="form-label"><span class="req">*</span>推送开始日期</div>
+              <div class="form-ctrl">
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                  <input type="date" id="psStart" style="width:180px">
+                  <span class="tag gray" id="startSrc">默认取圈选结束日期</span>
+                </div>
+                <div class="hint" id="startHint"></div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-label"><span class="req">*</span>推送结束日期</div>
+              <div class="form-ctrl">
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                  <input type="date" id="psEnd" style="width:180px" value="2026-09-10">
+                  <span class="tag gray">默认取活动结束日期</span>
+                  <button class="btn sm" onclick="simulateNoActEnd()">模拟：活动无结束日期</button>
+                </div>
+                <div class="hint" id="endHint">到达该日期后执行完当期即停止；<b>不再受人群包 90 天有效期约束</b></div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-label"><span class="req">*</span>二方平台</div>
+              <div class="form-ctrl">
+                <div id="platBox"></div>
+                <div class="hint">该配置同时作为推送任务：<b>包创建成功后将立即推送一次</b>，之后按周期自动推送</div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-label">推送计划</div>
+              <div class="form-ctrl">
+                <div class="plan" id="planBox"></div>
+                <div id="quotaTip" style="margin-top:8px"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 底部操作区 -->
+        <div class="bottom-bar">
+          <div class="bb-cell">
+            <div><b class="small">待加入条件组</b></div>
+            <div class="muted small">1 品牌 · 1 活动 · 1 行为</div>
+            <button class="btn" style="justify-content:center">加入运算池 1 ›</button>
+          </div>
+          <div class="bb-cell">
+            <div style="display:flex;align-items:baseline;gap:14px">
+              <span class="muted small">结果人数</span>
+              <span class="result-num num">126,904</span>
+            </div>
+            <div>
+              <div class="muted small" style="margin-bottom:4px">运算表达式</div>
+              <div class="expr" id="exprBox">运算池 1（条件组 1）＝ 品牌A · 2026 秋季新车上市 · 曝光 · 北京/上海/广东</div>
+            </div>
+            <div class="alert gray">
+              <span class="ai">ⓘ</span>
+              <span>生成人群包后不可变更圈选规则。<span class="hl" style="display:inline-block"><b>定期推送仅按相同条件重算数据，不变更圈选规则；推送模式提交后不可修改，其余配置可在人群列表中调整。</b> <span class="new-badge">NEW</span></span></span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn" style="flex:1;justify-content:center">取消</button>
+              <button class="btn primary" style="flex:2;justify-content:center" onclick="genPackage()">开始计算并生成</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 页面2：人群列表 ==================== -->
+      <section class="page active" id="page-list">
+        <div class="page-title">
+          <h2>人群列表</h2>
+          <p>基于默认工作空间的监测数据圈选人群，生成可推送的人群包</p>
+          <span style="flex:1"></span>
+          <button class="btn primary" onclick="go('page-create')">＋ 新建人群</button>
+        </div>
+
+        <div class="card">
+          <div class="card-bd">
+            <div class="filters">
+              <span class="muted small">共 48 个人群包</span>
+              <input class="inp" style="width:200px" placeholder="搜索人群包名称或系统 ID">
+              <select class="sel"><option>全部状态</option><option>计算成功</option><option>计算中</option></select>
+              <select class="sel hl" id="fPeriod" onchange="renderList()">
+                <option value="">全部定期推送状态</option><option value="none">未开启</option><option value="running">推送中</option>
+                <option value="doing">执行中</option><option value="paused">已暂停</option><option value="stopped">已停止</option><option value="error">推送异常</option>
+              </select>
+              <select class="sel hl" id="fMode" onchange="renderList()">
+                <option value="">全部推送模式</option><option value="new">① 定期圈新包</option><option value="update">② 定期更新原包</option>
+              </select>
+              <span class="new-badge">NEW</span>
+              <span style="flex:1"></span>
+              <label class="small muted hl" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+                <input type="checkbox" id="onlyParent" checked onchange="renderList()"> 仅看原包 <span class="new-badge">NEW</span>
+              </label>
+            </div>
+
+            <div class="tbl-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="min-width:230px">人群包</th>
+                    <th>可识别人数</th>
+                    <th>状态</th>
+                    <th class="hl" style="min-width:200px">定期推送 <span class="new-badge">重构</span></th>
+                    <th class="hl">最近推送时间 <span class="new-badge">NEW</span></th>
+                    <th class="hl">本期人数 <span class="new-badge">NEW</span></th>
+                    <th class="hl">已完成期数 <span class="new-badge">NEW</span></th>
+                    <th style="min-width:200px">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="listBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 页面3：人群推送详情 ==================== -->
+      <section class="page" id="page-push">
+        <div class="page-title">
+          <h2>人群推送详情</h2>
+          <p id="pushSub">—</p>
+          <span style="flex:1"></span>
+          <button class="btn" onclick="go('page-list')">返回人群列表</button>
+        </div>
+
+        <div class="card hl">
+          <div class="card-bd" style="display:flex;gap:36px;flex-wrap:wrap;align-items:center" id="pushHead"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd">
+            <h3>平台拆包明细</h3>
+            <span class="muted small" id="pushPlats"></span>
+          </div>
+          <div class="card-bd">
+            <div class="filters">
+              <select class="sel"><option>全部账户</option></select>
+              <select class="sel"><option>全部类型</option></select>
+              <span class="muted small">每个分包在二方平台上都是一个独立人群，各自返回自己的匹配人数</span>
+            </div>
+            <div class="tbl-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>二方平台</th><th>授权账户</th><th>设备 ID 类型</th><th>平台包名</th><th>平台人群包 ID</th>
+                    <th class="hl">推送方式 <span class="new-badge">NEW</span></th>
+                    <th>提交量级</th><th>平台匹配人数</th>
+                    <th class="hl">最近同步时间 <span class="new-badge">NEW</span></th>
+                    <th class="hl">累计推送次数 <span class="new-badge">NEW</span></th>
+                    <th>处理状态</th>
+                  </tr>
+                </thead>
+                <tbody id="pushBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 弹窗：定期推送设置 ==================== -->
+<div class="mask" id="mSetting">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>定期推送设置</h3><span class="new-badge">重构</span>
+      <button class="x" onclick="closeModal('mSetting')">✕</button>
+    </div>
+    <div class="modal-bd">
+      <div class="alert gray" style="margin-bottom:16px">
+        <span class="ai">ⓘ</span>
+        <div>
+          <div><b id="stName">—</b> <span class="muted">· <span id="stId">—</span></span></div>
+          <div class="muted" style="margin-top:2px">可识别人数 <span id="stNum">—</span> ｜ 首次生成 <span id="stD0">—</span> ｜ 圈选窗口 <span id="stRange">—</span></div>
+        </div>
+      </div>
+      <div id="stErr"></div>
+
+      <div class="form-row">
+        <div class="form-label">推送模式</div>
+        <div class="form-ctrl">
+          <span class="readonly-val" id="stMode">—</span>
+          <span class="lock">🔒 创建后不可修改</span>
+          <div class="hint">如需改用另一种模式，请新建人群</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">定期推送</div>
+        <div class="form-ctrl">
+          <div class="switch-row"><div class="switch on" id="swSet"></div><span id="swSetTxt">已开启</span></div>
+          <div class="hint">暂停后可随时恢复；恢复时从当前日期起按频率重排后续期次</div>
+        </div>
+      </div>
+
+      <div id="setFields">
+        <div class="form-row">
+          <div class="form-label"><span class="req">*</span>推送频率</div>
+          <div class="form-ctrl">
+            <div class="radios" id="setFreq">
+              <span class="radio" data-freq="1">每天</span>
+              <span class="radio on" data-freq="7">每 7 天</span>
+              <span class="radio" data-freq="15">每 15 天</span>
+            </div>
+            <div class="hint">修改后自下一期生效（下一期执行日 = 上一期执行日 + 新频率）</div>
+          </div>
+        </div>
+
+        <div class="form-row" id="setRowStart">
+          <div class="form-label">推送开始日期</div>
+          <div class="form-ctrl">
+            <span class="readonly-val" id="setStart">—</span>
+            <span class="lock">🔒 已产生的期次窗口不可回溯</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label"><span class="req">*</span>推送结束日期</div>
+          <div class="form-ctrl">
+            <input type="date" id="setEnd" style="width:180px">
+            <div class="hint">可延长或提前；提前至早于下一期执行日时等同于「提前终止」，需二次确认</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">二方平台</div>
+          <div class="form-ctrl">
+            <div id="setPlat"></div>
+            <div class="hint">新增账户自下一期起参与推送；移除账户仅停止后续推送，<b>不删除</b>平台侧已有人群包</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">推送计划</div>
+          <div class="form-ctrl">
+            <div class="plan">
+              <div class="plan-top">
+                <div><div class="k">下次执行日</div><div class="v" id="setNext">—</div></div>
+                <div><div class="k">剩余期数</div><div class="v" id="setLeft">—</div></div>
+                <div><div class="k">已完成期数</div><div class="v" id="setDone">—</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label">手动操作</div>
+          <div class="form-ctrl">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn sm" onclick="manualRun()">⟳ 立即执行一次</button>
+              <button class="btn sm danger" onclick="openModal('mStop')">■ 提前终止</button>
+            </div>
+            <div class="hint">立即执行不改变定时计划；同一人群包 24 小时内最多手动触发 3 次</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeModal('mSetting')">取消</button>
+      <button class="btn primary" onclick="closeModal('mSetting');toast('定期推送配置已保存，自下一期生效')">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 弹窗：暂停二次确认 ==================== -->
+<div class="mask" id="mPause">
+  <div class="modal" style="width:440px">
+    <div class="modal-hd"><h3>⚠️ 确认暂停定期推送？</h3><button class="x" onclick="closeModal('mPause')">✕</button></div>
+    <div class="modal-bd">
+      暂停后将<b>清除待执行期次</b>，二方平台侧已有人群包保留不变；已在执行中的期次会继续跑完。<br>
+      暂停后可随时恢复，恢复时从当前日期起按频率重排后续期次。是否确认？
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeModal('mPause')">再想想</button>
+      <button class="btn primary" onclick="doPause()">确认暂停</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 弹窗：提前终止 ==================== -->
+<div class="mask" id="mStop">
+  <div class="modal" style="width:440px">
+    <div class="modal-hd"><h3>⚠️ 确认提前终止定期推送？</h3><button class="x" onclick="closeModal('mStop')">✕</button></div>
+    <div class="modal-bd">
+      终止后该人群包将<b>不再自动推送</b>，二方平台侧已有人群包保留不变，且<b>终止后不可恢复</b>。<br>
+      如只是临时停止，请改用「暂停」。是否确认终止？
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeModal('mStop')">再想想</button>
+      <button class="btn primary" style="background:var(--danger);border-color:var(--danger)" onclick="doStop()">确认终止</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 抽屉：定期推送日志 ==================== -->
+<div class="drawer-mask" id="logMask" onclick="closeLog()"></div>
+<div class="drawer" id="logDrawer">
+  <div class="drawer-hd">
+    <div class="row1">
+      <h3 id="logTitle">定期推送日志</h3>
+      <span class="new-badge">重构</span>
+      <span class="muted small" id="logPkgId"></span>
+      <span class="tag purple" id="logMode"></span>
+      <button class="x" onclick="closeLog()">✕</button>
+    </div>
+  </div>
+  <div class="drawer-bd">
+    <div class="stats" id="logStats"></div>
+    <div class="filters">
+      <select class="sel"><option>全部时间</option><option>近 7 天</option><option>近 30 天</option></select>
+      <select class="sel"><option>全部本地状态</option><option>成功</option><option>失败</option><option>跳过</option></select>
+      <select class="sel"><option>全部平台推送状态</option><option>成功</option><option>部分成功</option><option>失败</option></select>
+      <select class="sel"><option>全部平台</option><option>腾讯如翼</option><option>巨量云图</option></select>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="min-width:210px">期次编号</th>
+            <th>执行日 / 跑批时间</th>
+            <th>触发方式</th>
+            <th>统计窗口</th>
+            <th id="thNum">本期人数</th>
+            <th id="thChg">人数变化</th>
+            <th>本地状态</th>
+            <th>平台推送状态</th>
+            <th style="min-width:120px">操作</th>
+          </tr>
+        </thead>
+        <tbody id="logBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   基础工具
+   ============================================================ */
+const TODAY = new Date(2026,7,10);          // 演示基准日 2026-08-10
+const ACT_END = '2026-09-10';               // 所选活动的活动结束日期（主数据）
+const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const md  = d => `${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const addD = (d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
+const parseD = s => s ? new Date(s.replace(/-/g,'/')) : null;
+const dayDiff = (a,b)=>Math.round((b-a)/86400000);
+const nf = n => n.toLocaleString();
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.innerHTML=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);
+}
+function go(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===id));
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.nav-item[data-page]').forEach(n=>n.onclick=()=>go(n.dataset.page));
+document.getElementById('hlToggle').onchange = e => document.body.classList.toggle('show-hl', e.target.checked);
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mask').forEach(m=>m.onclick=e=>{if(e.target===m)m.classList.remove('open');});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeLog();document.querySelectorAll('.mask.open').forEach(m=>m.classList.remove('open'));}
+});
+
+const MODE_LABEL = {new:'① 定期圈新包', update:'② 定期更新原包'};
+
+/* ============================================================
+   页面1：新建人群 · 定期推送设置
+   规则：
+   - 模式①：推送开始日期默认＝圈选结束日期（未填圈选日期时＝今天），可改
+             首次执行日 = 推送开始日期 + 频率；窗口 [上一执行日, 本次执行日] 滚动不重叠
+   - 模式②：无推送开始日期；首次执行日 = 创建日 + 频率
+             窗口 [圈选开始日期(未填则不限), 本次执行日] 累积
+   - 跑批时间 = 执行日的次日 03:00
+   - 推送结束日期默认＝活动结束日期，可改，无 90 天约束
+   ============================================================ */
+const cfg = { on:true, mode:'new', freq:7, start:null, end:ACT_END, startTouched:false,
+              plats:{ruyi:{on:true,accs:{'RY-58088395':true,'RY-77120031':false}},
+                     yuntu:{on:true,accs:{'YT-1863692771173707':true}}} };
+
+const PLAT_META = {
+  ruyi :{name:'腾讯如翼', quota:'934/1000', accs:{'RY-58088395':'58088395 - 加和（北京）信息科技','RY-77120031':'77120031 - 品牌A 官方旗舰'}},
+  yuntu:{name:'巨量云图', quota:'612/1000', accs:{'YT-1863692771173707':'1863692771173707 - 品牌A 云图主账户'}}
+};
+
+const startInput = document.getElementById('startDate');
+const endInput   = document.getElementById('endDate');
+const psStart    = document.getElementById('psStart');
+const psEnd      = document.getElementById('psEnd');
+
+function defaultStart(){
+  return endInput.value ? endInput.value : fmt(TODAY);
+}
+function syncStartDefault(){
+  if(cfg.startTouched) return;
+  cfg.start = defaultStart();
+  psStart.value = cfg.start;
+  document.getElementById('startSrc').textContent =
+    endInput.value ? '默认取圈选结束日期' : '圈选未填日期 → 默认取今天';
+  document.getElementById('startHint').innerHTML = endInput.value
+    ? `圈选条件已填写日期（${startInput.value||'不限'} ~ ${endInput.value}），推送开始日期默认取<b>圈选结束日期</b>；可修改`
+    : `圈选条件未填写日期（＝条件内全部人群），推送开始日期默认取<b>今天</b>；每期只圈该窗口内的人群，不会每期都圈全量`;
+}
+function clearRange(){
+  startInput.value=''; endInput.value='';
+  document.getElementById('poolRange').textContent = '不限时间 · 北京/上海/广东';
+  cfg.startTouched=false; syncStartDefault(); renderPlan();
+  toast('已清空圈选日期：圈选＝条件内全部人群；推送开始日期已联动为今天');
+}
+function simulateNoActEnd(){
+  psEnd.value=''; cfg.end='';
+  document.getElementById('endHint').innerHTML =
+    `<span style="color:var(--danger)">⚠ 所选活动未设置结束日期，请手动指定推送结束日期</span>`;
+  renderPlan();
+}
+startInput.onchange = ()=>{ document.getElementById('poolRange').textContent =
+  `${startInput.value||'不限'} ~ ${endInput.value||'不限'} · 北京/上海/广东`; renderPlan(); };
+endInput.onchange = ()=>{ document.getElementById('poolRange').textContent =
+  `${startInput.value||'不限'} ~ ${endInput.value||'不限'} · 北京/上海/广东`; syncStartDefault(); renderPlan(); };
+psStart.onchange = ()=>{ cfg.startTouched=true; cfg.start=psStart.value;
+  document.getElementById('startSrc').textContent='已手动修改'; renderPlan(); };
+psEnd.onchange   = ()=>{ cfg.end=psEnd.value; document.getElementById('endHint').innerHTML =
+  '到达该日期后执行完当期即停止；<b>不再受人群包 90 天有效期约束</b>'; renderPlan(); };
+
+function pickMode(m){
+  cfg.mode=m;
+  document.querySelectorAll('.mode-card').forEach(c=>c.classList.toggle('on',c.dataset.mode===m));
+  document.getElementById('rowStart').style.display = m==='new'?'flex':'none';
+  renderPlan();
+}
+document.querySelectorAll('#freqRadios .radio').forEach(r=>r.onclick=()=>{
+  document.querySelectorAll('#freqRadios .radio').forEach(x=>x.classList.remove('on'));
+  r.classList.add('on'); cfg.freq=+r.dataset.freq; renderPlan();
+});
+document.getElementById('swCreate').onclick=function(){
+  cfg.on=!cfg.on;
+  this.classList.toggle('on',cfg.on);
+  document.getElementById('swCreateTxt').textContent=cfg.on?'已开启':'已关闭';
+  document.getElementById('periodFields').style.display=cfg.on?'block':'none';
+};
+document.getElementById('pkgName').oninput = e =>
+  document.getElementById('nameCnt').textContent = `${e.target.value.length}/20`;
+
+/* ---- 平台 + 授权账户选择 ---- */
+function renderPlat(){
+  document.getElementById('platBox').innerHTML = Object.keys(PLAT_META).map(k=>{
+    const m=PLAT_META[k], s=cfg.plats[k];
+    return `<div class="plat-box">
+      <div class="plat-hd" onclick="togglePlat('${k}')">
+        <span class="cb ${s.on?'on':''}">${s.on?'✓':''}</span>
+        <span class="nm">${m.name}</span>
+        <span class="sp"></span>
+        <span class="acc q">人群包额度 ${m.quota}</span>
+      </div>
+      ${s.on?`<div class="acc-list">${Object.keys(m.accs).map(a=>`
+        <div class="acc" onclick="toggleAcc('${k}','${a}')">
+          <span class="cb ${s.accs[a]?'on':''}">${s.accs[a]?'✓':''}</span>
+          <span class="sp">${m.accs[a]}</span>
+          <span class="q">${a}</span>
+        </div>`).join('')}</div>`:''}
+    </div>`;
+  }).join('');
+}
+function togglePlat(k){ cfg.plats[k].on=!cfg.plats[k].on; renderPlat(); renderPlan(); }
+function toggleAcc(k,a){ cfg.plats[k].accs[a]=!cfg.plats[k].accs[a]; renderPlat(); renderPlan(); }
+function selectedAccs(){
+  const out=[];
+  Object.keys(cfg.plats).forEach(k=>{
+    if(!cfg.plats[k].on) return;
+    Object.keys(cfg.plats[k].accs).forEach(a=>{ if(cfg.plats[k].accs[a]) out.push({plat:k,acc:a}); });
+  });
+  return out;
+}
+
+/* ---- 推送计划计算 ---- */
+function buildPlan(){
+  const end = parseD(cfg.end);
+  if(!end) return null;
+  const base = cfg.mode==='new' ? parseD(cfg.start||defaultStart()) : TODAY;   // 模式②基准＝创建日
+  if(!base) return null;
+  const runs=[]; let d=addD(base,cfg.freq), prev=base, guard=0;
+  while(d<=end && guard++<400){ runs.push({exec:new Date(d), from:new Date(prev)}); prev=new Date(d); d=addD(d,cfg.freq); }
+  return {base, runs};
+}
+function winText(r){
+  if(cfg.mode==='new') return `${fmt(r.from)} ~ ${fmt(r.exec)}`;
+  return `${startInput.value||'不限'} ~ ${fmt(r.exec)}`;
+}
+function renderPlan(){
+  const box=document.getElementById('planBox');
+  const p=buildPlan();
+  if(!p || !p.runs.length){
+    box.innerHTML=`<div class="muted small">请先完善推送频率与推送结束日期。若按当前配置不会产生任何期次，提交时将被阻断并提示「请调整频率或结束日期」。</div>`;
+    document.getElementById('quotaTip').innerHTML=''; return;
+  }
+  const first=p.runs[0], n=p.runs.length;
+  const show = n<=4 ? p.runs : [p.runs[0],p.runs[1],p.runs[2],null,p.runs[n-1]];
+  box.innerHTML = `
+    <div class="plan-top">
+      <div><div class="k">首次执行日</div><div class="v">${fmt(first.exec)}</div></div>
+      <div><div class="k">首次跑批时间</div><div class="v">${fmt(addD(first.exec,1))} 03:00</div></div>
+      <div><div class="k">预计期数</div><div class="v">${n} 期</div></div>
+      <div><div class="k">结束</div><div class="v">${fmt(parseD(cfg.end))} 后停止</div></div>
+    </div>
+    <div class="tl">
+      ${show.map((r,i)=> r===null
+        ? `<div class="tl-i more"><span class="no">…</span><span class="win">中间 ${n-4} 期省略</span></div>`
+        : `<div class="tl-i">
+             <span class="no">第 ${r===p.runs[n-1]&&i===4?n:i+1} 期</span>
+             <span class="win">${winText(r)}</span>
+             <span class="run">跑批 ${fmt(addD(r.exec,1))} 03:00</span>
+           </div>`).join('')}
+    </div>
+    <div class="hint" style="margin-top:8px">${cfg.mode==='new'
+      ? '模式 ①：窗口<b>滚动不重叠</b>，每期只含该窗口内的人群，各期分别生成独立人群包'
+      : '模式 ②：窗口<b>累积</b>，开始日期不变、截止日顺延至执行日，同一个包持续变大'}</div>`;
+
+  // 模式①配额预估
+  const accs=selectedAccs(), idTypes=3;
+  const tip=document.getElementById('quotaTip');
+  if(cfg.mode==='new'){
+    const platPkgs=n*accs.length*idTypes;
+    const cls = (n>=20 || platPkgs>200) ? 'alert warn' : 'alert';
+    tip.innerHTML=`<div class="${cls}"><span class="ai">${cls.includes('warn')?'⚠':'ⓘ'}</span>
+      <span>按当前配置，预计新建<b>本地人群包 ${n} 个</b>、<b>平台人群包约 ${platPkgs} 个</b>
+      （${n} 期 × ${accs.length} 个账户 × ${idTypes} 种设备 ID 类型）。请确认平台账户额度充足；
+      每期为独立平台包，<b>广告计划需绑定新包</b>。</span></div>`;
+  }else{
+    tip.innerHTML=`<div class="alert"><span class="ai">ⓘ</span>
+      <span>模式 ② 复用首推时绑定的平台人群包 ID 做<b>全量覆盖</b>，不新建包、不删除包，
+      <b>广告计划无需重新绑定</b>；共消耗 ${accs.length*idTypes} 个平台人群包额度（仅首推时创建）。</span></div>`;
+  }
+}
+function genPackage(){
+  if(!cfg.on){ toast('人群包计算任务已提交（未开启定期推送，为一次性快照）'); setTimeout(()=>go('page-list'),900); return; }
+  const accs=selectedAccs();
+  if(!accs.length){ toast('请至少选择 1 个二方平台与 1 个授权账户'); return; }
+  const p=buildPlan();
+  if(!p||!p.runs.length){ toast('按当前配置不会产生任何推送期次，请调整频率或推送结束日期'); return; }
+  toast(`人群包计算任务已提交。计算成功后将<b>立即推送一次</b>至 ${accs.length} 个账户，
+    并按「${cfg.mode==='new'?'定期圈新包':'定期更新原包'} · 每 ${cfg.freq} 天」自动执行，
+    首次执行日 ${fmt(p.runs[0].exec)}（跑批 ${fmt(addD(p.runs[0].exec,1))} 03:00），至 ${cfg.end} 终止`);
+  setTimeout(()=>go('page-list'),1400);
+}
+
+pickMode('new');
+syncStartDefault();
+renderPlat();
+renderPlan();
+
+/* ============================================================
+   页面2：人群列表
+   ============================================================ */
+const PS = {
+  none   :{label:'未开启', cls:'gray'},
+  running:{label:'推送中', cls:'green'},
+  doing  :{label:'执行中', cls:'blue'},
+  paused :{label:'已暂停', cls:'orange'},
+  stopped:{label:'已停止', cls:'gray'},
+  error  :{label:'推送异常',cls:'red'}
+};
+
+const PKGS = [
+  { id:'AP000900041', name:'秋季新车_近7天曝光', num:'128,406', status:'计算成功',
+    mode:'new', ps:'running', freq:7, d0:'2026-07-12', range:'2026-07-01 ~ 2026-07-12',
+    psStart:'2026-07-12', psEnd:'2026-09-10', last:'2026-08-10 03:04', next:'2026-08-16',
+    done:4, total:8, cur:'128,406', curChg:'环比 +6.2%',
+    plats:['腾讯如翼','巨量云图'],
+    children:[
+      {id:'AP000900041-4', name:'秋季新车_近7天曝光_20260809', num:'128,406', win:'2026-08-02 ~ 2026-08-09', t:'2026-08-10 03:04'},
+      {id:'AP000900041-3', name:'秋季新车_近7天曝光_20260802', num:'120,881', win:'2026-07-26 ~ 2026-08-02', t:'2026-08-03 03:05'},
+      {id:'AP000900041-2', name:'秋季新车_近7天曝光_20260719', num:'118,203', win:'2026-07-12 ~ 2026-07-19', t:'2026-07-20 03:03'}
+    ]},
+
+  { id:'AP000900027', name:'品牌A 大盘曝光点击人群', num:'536,884', status:'计算成功',
+    mode:'update', ps:'running', freq:7, d0:'2026-07-15', range:'2026-06-01 ~ 不限',
+    psStart:'—', psEnd:'2026-09-10', last:'2026-08-06 03:07', next:'2026-08-12',
+    done:3, total:8, cur:'536,884', curChg:'+4,211 / -308',
+    plats:['腾讯如翼','巨量云图'], children:[] },
+
+  { id:'AP000900039', name:'华东高频曝光_每日包', num:'58,509', status:'计算成功',
+    mode:'new', ps:'error', freq:1, d0:'2026-08-01', range:'2026-07-01 ~ 2026-08-01',
+    psStart:'2026-08-01', psEnd:'2026-09-15', last:'2026-08-10 03:11', next:'2026-08-11',
+    done:8, total:45, cur:'6,204', curChg:'环比 -12.4%',
+    plats:['巨量云图'],
+    err:'巨量云图：OAID 分包新建平台人群包失败（账户人群包额度不足 612/1000），已自动重试 3 次',
+    children:[
+      {id:'AP000900039-8', name:'华东高频曝光_每日包_20260809', num:'6,204', win:'2026-08-08 ~ 2026-08-09', t:'2026-08-10 03:11'},
+      {id:'AP000900039-7', name:'华东高频曝光_每日包_20260808', num:'7,084', win:'2026-08-07 ~ 2026-08-08', t:'2026-08-09 03:09'}
+    ]},
+
+  { id:'AP000900025', name:'级联测试-点击人群', num:'58,509', status:'计算成功',
+    mode:'update', ps:'paused', freq:15, d0:'2026-07-05', range:'2026-06-15 ~ 不限',
+    psStart:'—', psEnd:'2026-09-15', last:'2026-08-05 03:05', next:'—',
+    done:2, total:5, cur:'58,509', curChg:'+0 / -0',
+    plats:['腾讯如翼'],
+    err:'连续 3 期平台推送失败：腾讯如翼授权账户 token 已失效，已自动暂停', children:[] },
+
+  { id:'AP000900024', name:'夏季促销_大盘人群', num:'52,392', status:'计算成功',
+    mode:'update', ps:'stopped', freq:7, d0:'2026-06-20', range:'2026-06-01 ~ 不限',
+    psStart:'—', psEnd:'2026-08-05', last:'2026-08-06 03:03', next:'—',
+    done:6, total:6, cur:'52,392', curChg:'+128 / -12',
+    plats:['腾讯如翼','巨量云图'],
+    err:'已到达推送结束日期（2026-08-05），定期推送已停止', children:[] },
+
+  { id:'AP000900023', name:'品牌A0728-2+ 人群（快照包）', num:'33,097', status:'计算成功',
+    mode:null, ps:'none', freq:null, d0:'2026-07-27', range:'2026-07-01 ~ 2026-07-27',
+    psStart:'—', psEnd:'—', last:'—', next:'—', done:0, total:0, cur:'—', curChg:'—',
+    plats:[], children:[] }
+];
+
+const expanded = new Set();
+
+function renderList(){
+  const fp=document.getElementById('fPeriod').value;
+  const fm=document.getElementById('fMode').value;
+  const onlyParent=document.getElementById('onlyParent').checked;
+  let rows='';
+  PKGS.filter(p=>(!fp||p.ps===fp)&&(!fm||p.mode===fm)).forEach(p=>{
+    const st=PS[p.ps];
+    const warn=p.err?`<span title="${p.err}" style="color:var(--warn);cursor:help">⚠</span>`:'';
+    const kids=p.children.length;
+    const isOpen=expanded.has(p.id);
+    const periodCell = p.ps==='none'
+      ? `<span class="tag gray">未开启</span>`
+      : `<div><span class="tag ${st.cls}">● ${st.label}</span> ${warn}</div>
+         <div class="muted xs" style="margin-top:3px">${MODE_LABEL[p.mode]} ｜ 每 ${p.freq} 天</div>
+         <div class="muted xs">下次执行日 ${p.next}</div>`;
+    rows += `<tr>
+      <td>
+        <div class="exp-cell">
+          ${kids&&p.mode==='new'
+            ? `<span class="expander" onclick="toggleKids('${p.id}')">${isOpen?'−':'+'}</span>`
+            : `<span style="display:inline-block;width:16px"></span>`}
+          <div>
+            <div><b>${p.name}</b></div>
+            <div class="muted xs">${p.id} ｜ 圈选 ${p.range}</div>
+            ${kids&&p.mode==='new'?`<div class="muted xs hl" style="display:inline-block;margin-top:2px">已生成 ${kids} 个子包 <span class="new-badge">NEW</span></div>`:''}
+          </div>
+        </div>
+      </td>
+      <td class="num">${p.num}</td>
+      <td><span class="tag green">${p.status}</span></td>
+      <td class="hl">${periodCell}</td>
+      <td class="hl num xs">${p.last}</td>
+      <td class="hl xs"><div class="num">${p.cur}</div><div class="muted">${p.curChg}</div></td>
+      <td class="hl num xs">${p.ps==='none'?'—':p.done+' / '+p.total}</td>
+      <td>
+        <span class="link ${p.ps==='none'?'disabled':''}" ${p.ps==='none'?'title="未开启定期推送"':`onclick="openSetting('${p.id}')"`}>推送设置</span>
+        <span class="muted">｜</span>
+        <span class="link ${p.ps==='none'?'disabled':''}" ${p.ps==='none'?'':`onclick="openLog('${p.id}')"`}>推送日志</span>
+        <span class="muted">｜</span>
+        <span class="link ${p.plats.length?'':'disabled'}" ${p.plats.length?`onclick="openPushDetail('${p.id}')"`:''}>推送详情</span>
+      </td>
+    </tr>`;
+
+    if(kids && p.mode==='new' && (isOpen || !onlyParent)){
+      p.children.forEach(c=>{
+        rows += `<tr class="row-child hl">
+          <td>
+            <div style="padding-left:22px">
+              <div><b>${c.name}</b><span class="child-mark">定期推送生成</span></div>
+              <div class="muted xs">${c.id} ｜ 窗口 ${c.win}</div>
+            </div>
+          </td>
+          <td class="num">${c.num}</td>
+          <td><span class="tag green">计算成功</span></td>
+          <td><span class="tag gray">不支持</span>
+            <div class="muted xs" style="margin-top:3px">自动生成的子包不可再开启定期推送</div></td>
+          <td class="num xs">${c.t}</td>
+          <td class="xs muted">—</td>
+          <td class="xs muted">—</td>
+          <td><span class="link" onclick="openPushDetail('${p.id}')">推送详情</span></td>
+        </tr>`;
+      });
+    }
+  });
+  document.getElementById('listBody').innerHTML=rows;
+}
+function toggleKids(id){ expanded.has(id)?expanded.delete(id):expanded.add(id); renderList(); }
+renderList();
+
+/* ============================================================
+   弹窗：定期推送设置
+   ============================================================ */
+let cur=null;
+function openSetting(id){
+  cur=PKGS.find(p=>p.id===id);
+  document.getElementById('stName').textContent=cur.name;
+  document.getElementById('stId').textContent=cur.id;
+  document.getElementById('stNum').textContent=cur.num;
+  document.getElementById('stD0').textContent=cur.d0;
+  document.getElementById('stRange').textContent=cur.range;
+  document.getElementById('stMode').textContent=MODE_LABEL[cur.mode];
+  document.getElementById('setRowStart').style.display = cur.mode==='new'?'flex':'none';
+  document.getElementById('setStart').textContent=cur.psStart;
+  document.getElementById('setEnd').value=cur.psEnd;
+  document.getElementById('setNext').textContent=cur.next;
+  document.getElementById('setDone').textContent=`${cur.done} 期`;
+  document.getElementById('setLeft').textContent=`${Math.max(cur.total-cur.done,0)} 期`;
+
+  document.querySelectorAll('#setFreq .radio').forEach(r=>r.classList.toggle('on',+r.dataset.freq===cur.freq));
+
+  const running = cur.ps!=='stopped' && cur.ps!=='paused';
+  const sw=document.getElementById('swSet');
+  sw.classList.toggle('on',running);
+  document.getElementById('swSetTxt').textContent = cur.ps==='stopped'?'已停止（不可恢复）':(running?'已开启':'已暂停');
+  document.getElementById('setFields').style.display = cur.ps==='stopped'?'none':'block';
+
+  document.getElementById('setPlat').innerHTML = Object.keys(PLAT_META).map(k=>{
+    const m=PLAT_META[k], on=cur.plats.includes(m.name);
+    return `<div class="plat-box"><div class="plat-hd">
+      <span class="cb ${on?'on':''}">${on?'✓':''}</span><span class="nm">${m.name}</span>
+      <span class="sp"></span><span class="acc q">${on?'已选 1 个账户':'未选择'}</span></div></div>`;
+  }).join('');
+
+  document.getElementById('stErr').innerHTML = cur.err
+    ? `<div class="alert ${cur.ps==='stopped'?'gray':'warn'}" style="margin-bottom:16px">
+         <span class="ai">${cur.ps==='stopped'?'ⓘ':'⚠'}</span><span>${cur.err}</span></div>`
+    : '';
+  openModal('mSetting');
+}
+document.querySelectorAll('#setFreq .radio').forEach(r=>r.onclick=()=>{
+  document.querySelectorAll('#setFreq .radio').forEach(x=>x.classList.remove('on'));
+  r.classList.add('on');
+  toast(`推送频率已改为「每 ${r.dataset.freq} 天」，自下一期生效`);
+});
+document.getElementById('swSet').onclick=function(){
+  if(!cur) return;
+  if(cur.ps==='stopped'){ toast('该人群包定期推送已终止，不可恢复；如需继续请新建人群'); return; }
+  if(this.classList.contains('on')){ openModal('mPause'); return; }
+  this.classList.add('on');
+  document.getElementById('swSetTxt').textContent='已开启';
+  cur.ps='running';
+  toast('已恢复定期推送，将从当前日期起按频率重排后续期次');
+  renderList();
+};
+function doPause(){
+  document.getElementById('swSet').classList.remove('on');
+  document.getElementById('swSetTxt').textContent='已暂停';
+  cur.ps='paused'; cur.next='—';
+  closeModal('mPause'); renderList();
+  toast('已暂停定期推送，待执行期次已清除；平台侧已有人群包保留不变');
+}
+function doStop(){
+  cur.ps='stopped'; cur.next='—';
+  closeModal('mStop'); closeModal('mSetting'); renderList();
+  toast('已提前终止定期推送，二方平台侧已有人群包保留不变');
+}
+function manualRun(){
+  const w = cur.mode==='new'
+    ? `以「上一执行日 ~ ${fmt(TODAY)}」为窗口新建 1 个子包并推送`
+    : `以「圈选开始日期 ~ ${fmt(TODAY)}」全量重算并覆盖推送`;
+  toast(`已触发手动执行：${w}；不改变下一期执行日（${cur.next}）`);
+}
+
+/* ============================================================
+   页面3：人群推送详情
+   ============================================================ */
+const PUSH_ROWS = {
+  // 模式①：每期新建平台包 → 平台包 ID 每期不同，推送方式=新建
+  'AP000900041':[
+    ['腾讯如翼','RY-58088395','IDFA','DM_秋季新车_近7天曝光_20260809_1','RY-PKG-20260810-0041','新建','38,204','37,918','2026-08-10 03:06','1'],
+    ['腾讯如翼','RY-58088395','OAID','DM_秋季新车_近7天曝光_20260809_2','RY-PKG-20260810-0042','新建','82,166','81,402','2026-08-10 03:06','1'],
+    ['腾讯如翼','RY-58088395','ANDROIDID','DM_秋季新车_近7天曝光_20260809_3','RY-PKG-20260810-0043','新建','8,036','7,884','2026-08-10 03:07','1'],
+    ['巨量云图','YT-1863692771173707','OAID','DM_秋季新车_近7天曝光_20260809_2','YT-PKG-20260810-8871','新建','82,166','80,973','2026-08-10 03:08','1']
+  ],
+  // 模式②：复用平台包 ID 全量覆盖 → ID 固定，累计次数递增
+  'AP000900027':[
+    ['腾讯如翼','RY-58088395','IDFA','DM_品牌A_大盘_000000E_1','RY-PKG-20260715-0007','全量覆盖','286,592','284,110','2026-08-06 03:07','4'],
+    ['腾讯如翼','RY-58088395','OAID','DM_品牌A_大盘_000000E_2','RY-PKG-20260715-0008','全量覆盖','250,193','248,802','2026-08-06 03:07','4'],
+    ['巨量云图','YT-1863692771173707','OAID','DM_品牌A_大盘_000000E_2','YT-PKG-20260715-6620','全量覆盖','250,193','247,551','2026-08-06 03:09','4'],
+    ['巨量云图','YT-1863692771173707','ANDROIDID','DM_品牌A_大盘_000000E_3','YT-PKG-20260715-6621','全量覆盖','80','76','2026-08-06 03:09','4']
+  ]
+};
+function openPushDetail(id){
+  const p=PKGS.find(x=>x.id===id);
+  const rows=PUSH_ROWS[id]||PUSH_ROWS['AP000900027'];
+  document.getElementById('pushSub').textContent=`${p.name} · ${p.id}`;
+  document.getElementById('pushPlats').textContent=p.plats.join(' ／ ');
+  const st=PS[p.ps];
+  document.getElementById('pushHead').innerHTML=`
+    <div><div class="muted small">定期推送状态 <span class="new-badge">NEW</span></div>
+      <div style="margin-top:3px"><span class="tag ${st.cls}">● ${st.label}</span></div></div>
+    <div><div class="muted small">推送模式 <span class="new-badge">NEW</span></div>
+      <div style="margin-top:3px"><span class="tag purple">${MODE_LABEL[p.mode]}</span> <span class="small muted">每 ${p.freq} 天</span></div></div>
+    <div><div class="muted small">最近推送时间</div><div style="margin-top:3px" class="num">${p.last}</div></div>
+    <div><div class="muted small">下次执行日 <span class="new-badge">NEW</span></div><div style="margin-top:3px" class="num">${p.next}</div></div>
+    <div><div class="muted small">推送结束日期 <span class="new-badge">NEW</span></div><div style="margin-top:3px" class="num">${p.psEnd}</div></div>
+    <div><div class="muted small">已完成期数</div><div style="margin-top:3px" class="num">${p.done} / ${p.total}</div></div>`;
+  document.getElementById('pushBody').innerHTML=rows.map(r=>`<tr>
+    <td>${r[0]}</td><td class="xs">${r[1]}</td><td>${r[2]}</td><td class="xs">${r[3]}</td>
+    <td class="xs num hl">${r[4]}</td>
+    <td class="hl"><span class="tag ${r[5]==='新建'?'orange':'blue'}">${r[5]}</span></td>
+    <td class="num">${r[6]}</td><td class="num">${r[7]}</td>
+    <td class="hl num xs">${r[8]}</td><td class="hl num">${r[9]}</td>
+    <td><span class="tag green">成功</span></td></tr>`).join('');
+  if(p.mode==='new'){
+    document.getElementById('pushBody').insertAdjacentHTML('afterbegin',
+      `<tr><td colspan="11" style="padding:0"><div class="alert warn" style="margin:10px 0">
+        <span class="ai">⚠</span><span>模式 ① 每期在平台侧<b>新建</b>独立人群包，平台包 ID 每期不同，
+        <b>广告计划需绑定当期新包</b>；历史平台包不会被删除。当前展示的是最近一期（第 ${p.done} 期）的分包。</span></div></td></tr>`);
+  }
+  go('page-push');
+}
+
+/* ============================================================
+   抽屉：定期推送日志
+   ============================================================ */
+const LOGS = {
+  /* 模式①：秋季新车_近7天曝光 */
+  'AP000900041':[
+    { batch:'PSH20260809030014', exec:'2026-08-09', run:'2026-08-10 03:04', trig:'定时',
+      win:'2026-08-02 ~ 2026-08-09', num:'128,406', chg:'环比 +6.2%', pkg:'秋季新车_近7天曝光_20260809',
+      local:['成功','green'], sync:['成功','green'],
+      detail:[
+        ['腾讯如翼','RY-58088395','IDFA','DM_..._20260809_1','RY-PKG-20260810-0041','新建','38,204','37,918','成功','03:06:41',''],
+        ['腾讯如翼','RY-58088395','OAID','DM_..._20260809_2','RY-PKG-20260810-0042','新建','82,166','81,402','成功','03:06:44',''],
+        ['巨量云图','YT-1863692771173707','OAID','DM_..._20260809_2','YT-PKG-20260810-8871','新建','82,166','80,973','成功','03:08:02','']
+      ]},
+    { batch:'PSH20260802030011', exec:'2026-08-02', run:'2026-08-03 03:05', trig:'定时',
+      win:'2026-07-26 ~ 2026-08-02', num:'120,881', chg:'环比 -3.1%', pkg:'秋季新车_近7天曝光_20260802',
+      local:['成功','green'], sync:['部分成功','orange'],
+      detail:[
+        ['腾讯如翼','RY-58088395','IDFA','DM_..._20260802_1','RY-PKG-20260803-0038','新建','36,102','35,884','成功','03:07:10',''],
+        ['巨量云图','YT-1863692771173707','OAID','DM_..._20260802_2','—','新建','78,441','—','失败','03:22:40','账户人群包额度不足，无法新建人群包（612/1000）']
+      ]},
+    { batch:'PSH20260726030007', exec:'2026-07-26', run:'2026-07-27 08:00', trig:'定时',
+      win:'—', num:'—', chg:'—', pkg:'—',
+      local:['跳过','gray'], sync:['—','gray'],
+      note:'执行日 2026-07-26 的数据清洗未就绪，等待至 08:00 超时，本期跳过。按方案不补跑、不顺延，<b>该窗口（07-19 ~ 07-26）人群不会进入任何子包</b>，下一期窗口仍从 07-26 起算',
+      detail:[]},
+    { batch:'PSH20260719030003', exec:'2026-07-19', run:'2026-07-20 03:03', trig:'定时',
+      win:'2026-07-12 ~ 2026-07-19', num:'118,203', chg:'首期', pkg:'秋季新车_近7天曝光_20260719',
+      local:['成功','green'], sync:['成功','green'],
+      detail:[
+        ['腾讯如翼','RY-58088395','IDFA','DM_..._20260719_1','RY-PKG-20260720-0021','新建','35,044','34,802','成功','03:05:02',''],
+        ['巨量云图','YT-1863692771173707','OAID','DM_..._20260719_2','YT-PKG-20260720-8802','新建','75,120','74,208','成功','03:05:44','']
+      ]},
+    { batch:'PSH20260712110052', exec:'2026-07-12', run:'2026-07-12 11:00', trig:'首推',
+      win:'2026-07-01 ~ 2026-07-12', num:'112,904', chg:'—', pkg:'秋季新车_近7天曝光（原包）',
+      local:['成功','green'], sync:['成功','green'],
+      note:'包创建成功后<b>立即推送一次</b>：推送的是原包当前快照，平台侧新建人群包',
+      detail:[
+        ['腾讯如翼','RY-58088395','IDFA','DM_原包_1','RY-PKG-20260712-0011','新建','33,880','33,602','成功','11:02:31',''],
+        ['巨量云图','YT-1863692771173707','OAID','DM_原包_2','YT-PKG-20260712-8790','新建','71,004','70,118','成功','11:03:10','']
+      ]}
+  ],
+  /* 模式②：品牌A 大盘曝光点击人群 */
+  'AP000900027':[
+    { batch:'PSH20260805030009', exec:'2026-08-05', run:'2026-08-06 03:07', trig:'定时',
+      win:'2026-06-01 ~ 2026-08-05', num:'536,884', chg:'+4,211 / -308', pkg:'—',
+      local:['成功','green'], sync:['成功','green'],
+      detail:[
+        ['腾讯如翼','RY-58088395','IDFA','DM_品牌A_大盘_000000E_1','RY-PKG-20260715-0007','全量覆盖','286,592','284,110','成功','03:07:12',''],
+        ['腾讯如翼','RY-58088395','OAID','DM_品牌A_大盘_000000E_2','RY-PKG-20260715-0008','全量覆盖','250,193','248,802','成功','03:07:15',''],
+        ['巨量云图','YT-1863692771173707','OAID','DM_品牌A_大盘_000000E_2','YT-PKG-20260715-6620','全量覆盖','250,193','247,551','成功','03:09:02','']
+      ]},
+    { batch:'PSH20260729030006', exec:'2026-07-29', run:'2026-07-30 03:06', trig:'定时',
+      win:'2026-06-01 ~ 2026-07-29', num:'532,981', chg:'+3,102 / -256', pkg:'—',
+      local:['成功','green'], sync:['部分成功','orange'],
+      detail:[
+        ['腾讯如翼','RY-58088395','IDFA','DM_品牌A_大盘_000000E_1','RY-PKG-20260715-0007','全量覆盖','284,003','281,660','成功','03:06:40',''],
+        ['巨量云图','YT-1863692771173707','OAID','DM_品牌A_大盘_000000E_2','YT-PKG-20260715-6620','全量覆盖','248,978','—','失败','03:21:55','平台接口限流（错误码 11017），已重试 3 次']
+      ]},
+    { batch:'PSH20260722030004', exec:'2026-07-22', run:'2026-07-23 03:04', trig:'定时',
+      win:'2026-06-01 ~ 2026-07-22', num:'529,879', chg:'+189,204 / -1,024', pkg:'—',
+      local:['成功','green'], sync:['成功','green'],
+      warn:'人数变动率 +55.9%，超过 ±50% 阈值，已标记异常波动并告警（<b>不阻断</b>本次推送）',
+      detail:[
+        ['腾讯如翼','RY-58088395','IDFA','DM_品牌A_大盘_000000E_1','RY-PKG-20260715-0007','全量覆盖','281,004','279,118','成功','03:04:22','']
+      ]},
+    { batch:'PSH20260715093012', exec:'2026-07-15', run:'2026-07-15 09:30', trig:'首推',
+      win:'2026-06-01 ~ 2026-07-15', num:'340,675', chg:'—', pkg:'—',
+      local:['成功','green'], sync:['成功','green'],
+      note:'包创建成功后<b>立即推送一次</b>：平台侧新建人群包，并记录平台包 ID 绑定关系，作为后续<b>全量覆盖</b>的基准',
+      detail:[
+        ['腾讯如翼','RY-58088395','IDFA','DM_品牌A_大盘_000000E_1','RY-PKG-20260715-0007','新建','180,220','178,904','成功','09:32:10',''],
+        ['巨量云图','YT-1863692771173707','OAID','DM_品牌A_大盘_000000E_2','YT-PKG-20260715-6620','新建','160,455','158,220','成功','09:33:41','']
+      ]}
+  ]
+};
+
+function openLog(id){
+  const p=PKGS.find(x=>x.id===id);
+  const logs=LOGS[id]||LOGS['AP000900027'];
+  document.getElementById('logTitle').textContent=`${p.name} · 定期推送日志`;
+  document.getElementById('logPkgId').textContent=p.id;
+  document.getElementById('logMode').textContent=MODE_LABEL[p.mode];
+  document.getElementById('thNum').textContent = p.mode==='new'?'本期人数（子包）':'更新后人数';
+  document.getElementById('thChg').textContent = p.mode==='new'?'环比变化':'新增 / 减少';
+
+  document.getElementById('logStats').innerHTML = p.mode==='new'
+    ? `<div class="stat"><div class="k">累计执行期数</div><div class="v num">${p.done}</div></div>
+       <div class="stat"><div class="k">累计生成子包</div><div class="v num">${p.children.length}</div></div>
+       <div class="stat"><div class="k">累计新建平台包</div><div class="v num">${p.done*3}</div></div>
+       <div class="stat"><div class="k">下次执行日</div><div class="v num" style="font-size:14px">${p.next}</div></div>
+       <div class="stat"><div class="k">推送结束日期</div><div class="v num" style="font-size:14px">${p.psEnd}</div></div>`
+    : `<div class="stat"><div class="k">当前可识别人数</div><div class="v num">${p.num}</div></div>
+       <div class="stat"><div class="k">累计更新次数</div><div class="v num">${p.done}</div></div>
+       <div class="stat"><div class="k">最近推送时间</div><div class="v num" style="font-size:14px">${p.last}</div></div>
+       <div class="stat"><div class="k">下次执行日</div><div class="v num" style="font-size:14px">${p.next}</div></div>
+       <div class="stat"><div class="k">推送结束日期</div><div class="v num" style="font-size:14px">${p.psEnd}</div></div>`;
+
+  document.getElementById('logBody').innerHTML = logs.map((l,i)=>{
+    const hasFail=l.detail.some(d=>d[8]==='失败');
+    const main=`<tr>
+      <td>
+        ${l.detail.length?`<span class="expander" id="exp${i}" onclick="toggleSub(${i})">+</span>`:'<span style="display:inline-block;width:22px"></span>'}
+        <span class="xs num">${l.batch}</span>
+        ${l.pkg&&l.pkg!=='—'?`<div class="muted xs" style="margin-left:22px">子包：${l.pkg}</div>`:''}
+      </td>
+      <td class="xs num">${l.exec}<div class="muted">跑批 ${l.run}</div></td>
+      <td><span class="tag ${l.trig==='定时'?'gray':(l.trig==='首推'?'purple':'blue')}">${l.trig}</span></td>
+      <td class="xs num">${l.win}</td>
+      <td class="num">${l.num}</td>
+      <td class="xs">${l.chg}</td>
+      <td><span class="tag ${l.local[1]}">${l.local[0]}</span></td>
+      <td><span class="tag ${l.sync[1]}">${l.sync[0]}</span></td>
+      <td>
+        ${l.detail.length?`<span class="link xs" onclick="toggleSub(${i})">查看明细</span>`:'<span class="muted xs">—</span>'}
+        ${hasFail?` <span class="muted">｜</span> <span class="link xs" onclick="toast('已重试该期次的 1 个失败分包；模式 ① 重试复用本期已创建的平台包 ID，不会重复建包')">重试</span>`:''}
+      </td>
+    </tr>`;
+    const note=(l.note||l.warn)?`<tr><td colspan="9" style="padding-top:0">
+      <div class="alert ${l.warn?'warn':'gray'}" style="margin-left:22px"><span class="ai">${l.warn?'⚠':'ⓘ'}</span><span>${l.warn||l.note}</span></div></td></tr>`:'';
+    const sub=l.detail.length?`<tr id="sub${i}" style="display:none"><td colspan="9" class="sub"><div class="sub-inner">
+      <div class="sub-title">平台推送明细 <span class="muted">按「二方平台 → 授权账户 → 设备 ID 类型分包」展示</span></div>
+      <table><thead><tr>
+        <th>二方平台</th><th>授权账户</th><th>设备 ID 类型</th><th>平台包名</th><th>平台人群包 ID</th>
+        <th>推送方式</th><th>提交量级</th><th>平台匹配人数</th><th>处理状态</th><th>完成时间</th><th>失败原因</th>
+      </tr></thead><tbody>
+        ${l.detail.map(d=>`<tr>
+          <td>${d[0]}</td><td class="xs">${d[1]}</td><td>${d[2]}</td><td class="xs">${d[3]}</td><td class="xs num">${d[4]}</td>
+          <td><span class="tag ${d[5]==='新建'?'orange':'blue'}">${d[5]}</span></td>
+          <td class="num">${d[6]}</td><td class="num">${d[7]}</td>
+          <td><span class="tag ${d[8]==='成功'?'green':'red'}">${d[8]}</span></td>
+          <td class="xs">${d[9]}</td><td class="xs" style="color:var(--danger)">${d[10]||'—'}</td>
+        </tr>`).join('')}
+      </tbody></table></div></td></tr>`:'';
+    return main+note+sub;
+  }).join('');
+
+  document.getElementById('logMask').classList.add('open');
+  requestAnimationFrame(()=>document.getElementById('logDrawer').classList.add('open'));
+}
+function toggleSub(i){
+  const el=document.getElementById('sub'+i), btn=document.getElementById('exp'+i);
+  const open=el.style.display==='none';
+  el.style.display=open?'table-row':'none';
+  if(btn) btn.textContent=open?'−':'+';
+}
+function closeLog(){
+  document.getElementById('logDrawer').classList.remove('open');
+  setTimeout(()=>document.getElementById('logMask').classList.remove('open'),200);
+}
+
+openPushDetail('AP000900027');
+go('page-list');
+</script>
+</body>
+</html>
