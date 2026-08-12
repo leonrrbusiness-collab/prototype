@@ -580,6 +580,14 @@ body.show-hl th.pf-hl,body.show-hl td.pf-hl{outline-offset:-1px;background:rgba(
 .bm-unk{margin-top:8px;padding:6px 9px;background:var(--warn-bg);border-radius:4px;
   font-size:11px;color:#A65B00;line-height:1.6}
 
+/* ============ 京东数坊画像（本次新增） ============ */
+.pf-src.jd{background:#FFECE8;color:#D93026}
+.dx-cols .col i.jd-unk{background:#B8C4D9}          /* 「未知 / 其他」兜底档柱体弱化 */
+.dx-cols .col:hover i.jd-unk{background:#93A3BF}
+.dx-dot.jd-hi{width:10px;height:10px;background:#F5222D;box-shadow:0 0 0 2px rgba(245,34,45,.18)}
+.dx-lg i.h{width:9px;height:9px;border-radius:50%;background:#F5222D}
+.dx-lg .jd-miss{color:var(--text-4)}
+
 @media (max-width:1100px){
   .create-grid,.bottom-bar,.mode-grid{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(2,1fr)}
@@ -1622,7 +1630,8 @@ const PUSH_ROWS = {
     ['腾讯如翼','RY-58088395','IDFA','DM_夏季促销_大盘人群_000000C_1','RY-PKG-20260620-0031','全量覆盖','33,095','32,740','2026-08-06 03:03','6'],
     ['巨量云图','YT-1863692771173707','OAID','DM_夏季促销_大盘人群_000000C_2','YT-PKG-20260620-7712','全量覆盖','19,293','18,904','2026-08-06 03:04','6'],
     ['巨量云图','YT-1863692771173707','IMEI','DM_夏季促销_大盘人群_000000C_4','YT-PKG-20260620-7714','全量覆盖','2','2','2026-08-06 03:04','6'],
-    ['品牌数据引擎','BDE-40027715','OAID','DM_夏季促销_大盘人群_000000C_2','BDE-PKG-20260620-3308','全量覆盖','19,293','18,662','2026-08-06 03:05','6']
+    ['品牌数据引擎','BDE-40027715','OAID','DM_夏季促销_大盘人群_000000C_2','BDE-PKG-20260620-3308','全量覆盖','19,293','18,662','2026-08-06 03:05','6'],
+    ['京东数坊','JD-90261877','OAID','DM_夏季促销_大盘人群_000000C_2','JD-PKG-20260620-5164','全量覆盖','19,293','17,905','2026-08-06 03:05','6']
   ]
 };
 function openPushDetail(id){
@@ -1929,13 +1938,14 @@ const tipAttr=(n,v)=>`data-tip="${esc(n)}" data-tipv="${esc(v)}"`;
    naPlat 平台不支持画像 / naSmall 小样本 / naRow 分包本身不可用
    ★ 已支持的二方平台：巨量云图、腾讯如翼；两平台状态机完全一致，仅数据模型与页面不同 */
 const PF_SMALL=1000;
-const PF_PLATS={'巨量云图':1,'腾讯如翼':1,'品牌数据引擎':1};
+const PF_PLATS={'巨量云图':1,'腾讯如翼':1,'品牌数据引擎':1,'京东数坊':1};
 const PF_STATE={
   'AP000900039#0':'fail',     // 生成失败
   'AP000900039#1':'running',  // 生成中（演示轮询到状态变更后自动切换）
   'AP000900024#0':'done',     // ★ 腾讯如翼：已生成（可直接查看）
   'AP000900024#1':'done',     // 巨量云图：已生成
-  'AP000900024#3':'done'      // ★ 品牌数据引擎：已生成（同一本地包，三平台各一份画像）
+  'AP000900024#3':'done',     // 品牌数据引擎：已生成
+  'AP000900024#4':'done'      // ★ 京东数坊：已生成（同一本地包，四平台各一份画像）
 };
 const PF_FAILMSG='云图返回：人群包画像任务执行失败（任务 8871-P3，错误码 PROFILE_TASK_FAILED），可重新生成';
 let pfTimers={};
@@ -1993,17 +2003,17 @@ function pfBack(){ openPushDetail(PF.pkg); }
 function renderProfile(){
   const r=PF.r, p=PKGS.find(x=>x.id===PF.pkg);
   const st=pfStatus(PF.pkg,PF.row,r);
-  const ry=PF.plat==='腾讯如翼', bd=PF.plat==='品牌数据引擎';   // ★ 三个平台版本
+  const ry=PF.plat==='腾讯如翼', bd=PF.plat==='品牌数据引擎', jd=PF.plat==='京东数坊';   // ★ 四个平台版本
   document.getElementById('pfSub').innerHTML=
     `数据来源：<b>${esc(PF.plat)}</b>回传的人群画像标签`;
   document.getElementById('pfHead').innerHTML=`
     <div class="h1">${esc(r[3])} <span class="copy" onclick="toast('平台包名已复制')">⧉ 复制</span>
       ${st==='done'?'<span class="pf-ok">● 计算成功</span>':''}
-      <span class="pf-src${ry?'':(bd?' bde':' yt')}">${esc(PF.plat)}</span></div>
+      <span class="pf-src${ry?'':(bd?' bde':(jd?' jd':' yt'))}">${esc(PF.plat)}</span></div>
     <div class="meta">
       <span>所属人群包 <b>${esc(p.name)}</b> · <b>${p.id}</b></span><span class="sep">|</span>
       <span>设备 ID 类型 <b>${r[2]}</b></span><span class="sep">|</span>
-      <span>${ry||bd?'人群规模':'覆盖人数'} <b>${r[7]}</b></span><span class="sep">|</span>
+      <span>${ry||bd||jd?'人群规模':'覆盖人数'} <b>${r[7]}</b></span><span class="sep">|</span>
       <span>画像生成时间 <b>${st==='done'?'2026-08-11 15:26':'—'}</b></span><span class="sep">|</span>
       <span>数据来源 <b>${esc(PF.plat)}</b></span>
     </div>`;
@@ -2027,11 +2037,13 @@ function renderProfile(){
     return;
   }
   bar.style.display='';
-  document.getElementById('pfDl').textContent = ry?'⤓ 下载数据':'⤓ 下载';
+  document.getElementById('pfDl').textContent = (ry||jd)?'⤓ 下载数据':'⤓ 下载';
   /* 工具条「不做项」与平台特性说明，便于评审核对 */
   document.getElementById('pfBarNote').innerHTML = ry
     ? '按需求不提供「更新 / 删除 / 新窗口打开」，Tab 不含「配置信息」'
-    : bd ? '该平台画像为单页形态：无二级 Tab、无 TGI、无下钻' : '';
+    : bd ? '该平台画像为单页形态：无二级 Tab、无 TGI、无下钻'
+    : jd ? 'TGI 按需求统一为「占比柱 + TGI 折线」形态，未采用平台原生双柱' : '';
+  if(jd){ renderJdBody(); return; }
   if(bd){ renderBdeBody(); return; }
   if(ry){ renderRuyiBody(); return; }
   renderPfTabs(); renderPfFeat(); renderPfCards();
@@ -2725,9 +2737,225 @@ function renderBdeBody(){
   renderBdeFeat(); renderBdeCards();
 }
 
+/* ===== 京东数坊画像样本数据（京东数坊-透视分析_KWS_JG.xlsx，人群 KWS_JG）=====
+   行结构：[枚举值, 占比(%), TGI]｜原始占比为小数，已 ×100 转百分比
+   TGI = -1 为平台哨兵值（该枚举无法计算 TGI，多见于「其他」兜底档），页面按缺失处理
+   38 个维度、227 条明细，全部为单选型（各维度占比合计 100%）*/
+const J_DATA={
+"十大靶群":[["小镇家庭",28.69,259],["都市家庭",19.53,328],["银发一族",17.95,94],["小镇中产",11.67,140],["学生一族",10.67,234],["都市中产",3.85,210],["小镇中年",3.31,21],["小镇青年",2.07,9],["都市蓝领",2.05,26],["都市Z世代",0.22,4]],
+"职业":[["公司职员",47.03,227],["学生",13.32,64],["个体或服务业",13.08,92],["工人",7.88,209],["农民",6.0,50],["教职工",4.4,116],["城市其他职业",2.94,16],["医务人员",2.31,203],["金融从业者",2.17,440],["农村其他职业",0.88,15]],
+"性别":[["女",61.87,133],["男",38.13,70]],
+"年龄":[["0~15岁",0.01,4],["16~20岁",0.25,2],["21~25岁",2.98,21],["26~30岁",13.45,89],["31~35岁",19.94,133],["36~40岁",21.72,136],["41~45岁",14.65,175],["46~50岁",10.23,147],["51~55岁",8.4,115],["56~60岁",4.34,110],["61~65岁",2.55,125],["66~70岁",0.92,96],["71岁及以上",0.57,64]],
+"用户年代":[["60后",8.62,72],["70后",18.28,121],["80后",36.49,149],["90后",33.26,125],["00后",3.35,15]],
+"学历":[["高中",0.06,13],["专科",21.21,38],["职高",0.52,48],["本科",57.44,147],["硕士",20.34,426],["博士",0.44,275]],
+"婚姻状况":[["已婚",65.47,95],["未婚",34.53,109]],
+"城市线级":[["一线",13.76,138],["二线",27.16,131],["三线",21.64,112],["四线",16.83,74],["五线",12.46,72],["六线-1",8.14,79]],
+"常用收货省份":[["江苏",8.77,124],["广东",7.71,61],["山东",6.13,86],["浙江",6.11,107],["辽宁",6.02,200],["北京",5.94,221],["陕西",5.6,174],["四川",5.18,97],["河北",5.02,93],["上海",4.17,160],["其他",39.35,-1]],
+"孩子预测年龄":[["孕期3-6个月",0.55,205],["孕期6-10个月",1.08,142],["0-3个月",2.76,106],["3-6个月",2.57,91],["6-9个月",2.29,88],["9-12个月",2.88,88],["12-18个月",4.07,56],["18-24个月",3.28,58],["24-36个月",5.12,141],["3-4岁",7.26,188],["4-5岁",4.92,580],["5-6岁",4.42,724],["6-12岁",52.4,108],["12-14岁",6.4,332]],
+"客户当前使用手机品牌":[["Apple",42.85,157],["华为",26.7,155],["荣耀",7.87,67],["vivo",5.89,36],["小米",5.26,131],["OPPO",4.09,33],["REDMI",3.7,55],["一加",1.32,72],["三星",1.28,163],["REALME",0.39,34],["其他",0.65,-1]],
+"无线端操作系统":[["Android",69.42,86],["IOS",30.58,154]],
+"京享值":[["京享值<=200",2.15,6],["200<京享值<3000",8.88,16],["3000<=京享值<5000",22.44,220],["5000<=京享值<6000",15.74,728],["京享值>=6000",50.79,2281]],
+"PLUS会员":[["是",46.03,2511],["否",53.97,54]],
+"购买力":[["极高",57.52,572],["高",27.81,138],["中",12.5,34],["低",1.71,6],["极低",0.45,6]],
+"有车一族":[["是",47.13,811],["否",2.72,295],["未知",50.15,53]],
+"有房人群":[["是",63.45,852],["未知",36.55,39]],
+"日均订单数量-近7天":[["(0-1)单",68.44,81],["[1-2)单",18.58,179],["[2-3)单",7.05,211],["[3-4)单",2.95,223],["[4-5)单",1.34,225],["[5-6)单",0.75,257],["[6-7)单",0.34,220],["[7-8)单",0.18,214],["[8-9)单",0.12,244],["9单及以上",0.25,219]],
+"日均订单数量-近30天":[["(0-1)单",80.72,86],["[1-2)单",13.87,300],["[2-3)单",3.75,338],["[3-4)单",1.19,336],["4单以上",0.48,356]],
+"用户月支付订单数量":[["1笔订单",23.32,37],["2笔订单",11.9,88],["3笔订单",7.82,118],["4笔订单",6.18,159],["5笔订单",5.28,205],["6笔订单",4.41,240],["7笔订单",3.76,273],["8笔订单",3.21,298],["9笔订单",2.96,344],["10笔订单",2.75,392],["大于10单",28.41,603]],
+"用户月平均支付订单总额":[["10元以下",3.08,11],["10-50元",5.75,29],["50-100元",4.92,47],["100-200元",6.85,66],["200-300元",5.36,92],["300-500元",8.58,122],["500-1000元",15.58,186],["1000元以上",49.87,460]],
+"无线端购物活跃时段-近7天":[["[10-11)时",6.46,50],["[11-12)时",6.75,41],["[20-21)时",7.16,63],["[21-22)时",7.03,63],["[22-23)时",6.85,64],["其他",65.75,-1]],
+"促销敏感度":[["近一年有复购用户&极度敏感",40.53,883],["近一年有复购用户&高度敏感",27.24,474],["近一年有复购用户&中度敏感",9.5,275],["近一年有复购用户&轻度敏感",7.63,151],["一年前有复购用户&高度敏感",2.73,35],["一年前有复购用户&轻度敏感",2.44,24],["一年前有复购用户&中度敏感",2.3,36],["近一年有复购用户&不敏感",2.3,56],["一年前有复购用户&极度敏感",1.62,20],["一年前有复购用户&不敏感",0.93,9],["一年前无复购用户&不敏感",0.77,7],["一年前无复购用户&轻度敏感",0.71,10],["一年前无复购用户&极度敏感",0.43,7],["一年前无复购用户&中度敏感",0.3,5],["近一年无复购用户&轻度敏感",0.15,51],["近一年无复购用户&极度敏感",0.14,34],["一年前无复购用户&高度敏感",0.09,1],["近一年无复购用户&中度敏感",0.08,25],["近一年无复购用户&高度敏感",0.06,12],["近一年无复购用户&不敏感",0.05,6]],
+"评价敏感度":[["极度敏感",41.65,192],["高度敏感",39.3,145],["中度敏感",9.94,47],["轻度敏感",5.08,28],["不敏感",4.02,31]],
+"商品折扣率偏好":[["5折以下",2.83,25],["5-6折",5.64,96],["6-7折",19.57,157],["7-8折",39.68,198],["8-9折",23.64,119],["9折以上",6.62,39],["不打折",2.02,14]],
+"热衷使用优惠券用户":[["热衷用券",75.96,508],["未知",24.04,28]],
+"冲动购买":[["冲动购买",20.76,824],["未知",79.24,81]],
+"秒杀商品偏好":[["轻度偏好",65.83,96],["中度偏好",27.92,107],["高度偏好",6.25,125]],
+"全站新品偏好":[["低",42.79,76],["中",37.52,112],["高",19.69,178]],
+"用户消费月份偏好":[["1月份",7.78,38],["2月份",5.75,33],["3月份",6.63,36],["4月份",5.85,32],["5月份",10.22,47],["6月份",10.35,45],["7月份",6.09,31],["8月份",6.94,30],["9月份",8.13,38],["10月份",12.98,55],["11月份",12.29,55],["12月份",6.99,37]],
+"宠物爱好者":[["重度爱好者",15.55,226],["中度爱好者",15.78,136],["轻度爱好者",68.67,84]],
+"旅游爱好者":[["重度爱好者",7.95,246],["中度爱好者",22.24,152],["轻度爱好者",69.81,84]],
+"健身爱好者":[["重度爱好者",10.46,314],["中度爱好者",41.21,159],["轻度爱好者",48.33,68]],
+"体育运动爱好者":[["重度爱好者",17.82,372],["中度爱好者",27.78,194],["轻度爱好者",54.4,67]],
+"户外运动爱好者":[["重度爱好者",20.81,379],["中度爱好者",23.03,215],["轻度爱好者",56.16,66]],
+"游戏爱好者":[["重度爱好者",6.49,167],["中度爱好者",13.09,135],["轻度爱好者",80.42,93]],
+"科技产品爱好者":[["重度爱好者",21.74,470],["中度爱好者",27.47,207],["轻度爱好者",50.79,61]],
+"女装用户":[["精确",3.49,3150],["广泛",11.27,1828],["未知",85.24,85]]
+};
+const J_TABS=["基础属性","消费能力","用户偏好"];
+/* 维度元数据：tab 所属Tab｜ord fixed按业务顺序/desc按占比降序｜fo 兜底顺序数组（平台不回传 tag_order 时使用） */
+const J_META={
+"十大靶群":{tab:0,ord:'desc'},
+"职业":{tab:0,ord:'desc'},
+"性别":{tab:0,ord:'desc'},
+"年龄":{tab:0,ord:'fixed'},
+"用户年代":{tab:0,ord:'fixed',fo:["60后","70后","80后","90后","00后"]},
+"学历":{tab:0,ord:'fixed'},
+"婚姻状况":{tab:0,ord:'fixed'},
+"城市线级":{tab:0,ord:'fixed'},
+"常用收货省份":{tab:0,ord:'desc'},
+"孩子预测年龄":{tab:0,ord:'fixed'},
+"客户当前使用手机品牌":{tab:0,ord:'desc'},
+"无线端操作系统":{tab:0,ord:'desc'},
+"京享值":{tab:1,ord:'fixed'},
+"PLUS会员":{tab:1,ord:'fixed'},
+"购买力":{tab:1,ord:'fixed'},
+"有车一族":{tab:1,ord:'fixed',fo:["是","否","未知"]},
+"有房人群":{tab:1,ord:'fixed',fo:["是","未知"]},
+"日均订单数量-近7天":{tab:1,ord:'fixed',fo:["(0-1)单","[1-2)单","[2-3)单","[3-4)单","[4-5)单","[5-6)单","[6-7)单","[7-8)单","[8-9)单","9单及以上"]},
+"日均订单数量-近30天":{tab:1,ord:'fixed'},
+"用户月支付订单数量":{tab:1,ord:'fixed',fo:["1笔订单","2笔订单","3笔订单","4笔订单","5笔订单","6笔订单","7笔订单","8笔订单","9笔订单","10笔订单","大于10单"]},
+"用户月平均支付订单总额":{tab:1,ord:'fixed'},
+"无线端购物活跃时段-近7天":{tab:1,ord:'fixed',fo:["[10-11)时","[11-12)时","[20-21)时","[21-22)时","[22-23)时","其他"]},
+"促销敏感度":{tab:2,ord:'desc'},
+"评价敏感度":{tab:2,ord:'fixed'},
+"商品折扣率偏好":{tab:2,ord:'fixed',fo:["5折以下","5-6折","6-7折","7-8折","8-9折","9折以上","不打折"]},
+"热衷使用优惠券用户":{tab:2,ord:'fixed',fo:["热衷用券","未知"]},
+"冲动购买":{tab:2,ord:'fixed',fo:["冲动购买","未知"]},
+"秒杀商品偏好":{tab:2,ord:'fixed'},
+"全站新品偏好":{tab:2,ord:'fixed'},
+"用户消费月份偏好":{tab:2,ord:'fixed',fo:["1月份","2月份","3月份","4月份","5月份","6月份","7月份","8月份","9月份","10月份","11月份","12月份"]},
+"宠物爱好者":{tab:2,ord:'fixed',fo:["重度爱好者","中度爱好者","轻度爱好者"]},
+"旅游爱好者":{tab:2,ord:'fixed',fo:["重度爱好者","中度爱好者","轻度爱好者"]},
+"健身爱好者":{tab:2,ord:'fixed',fo:["重度爱好者","中度爱好者","轻度爱好者"]},
+"体育运动爱好者":{tab:2,ord:'fixed',fo:["重度爱好者","中度爱好者","轻度爱好者"]},
+"户外运动爱好者":{tab:2,ord:'fixed',fo:["重度爱好者","中度爱好者","轻度爱好者"]},
+"游戏爱好者":{tab:2,ord:'fixed',fo:["重度爱好者","中度爱好者","轻度爱好者"]},
+"科技产品爱好者":{tab:2,ord:'fixed',fo:["重度爱好者","中度爱好者","轻度爱好者"]},
+"女装用户":{tab:2,ord:'fixed',fo:["精确","广泛","未知"]}
+};
+/* 卡片固定顺序（PRD 附录 C）：左右两列并排，顺序写死 */
+const J_ORDER=["十大靶群","职业","性别","年龄","用户年代","学历","婚姻状况","城市线级","常用收货省份","孩子预测年龄","客户当前使用手机品牌","无线端操作系统","京享值","PLUS会员","购买力","有车一族","有房人群","日均订单数量-近7天","日均订单数量-近30天","用户月支付订单数量","用户月平均支付订单总额","无线端购物活跃时段-近7天","促销敏感度","评价敏感度","商品折扣率偏好","热衷使用优惠券用户","冲动购买","秒杀商品偏好","全站新品偏好","用户消费月份偏好","宠物爱好者","旅游爱好者","健身爱好者","体育运动爱好者","户外运动爱好者","游戏爱好者","科技产品爱好者","女装用户"];
+
+/* ============================================================
+   ★★ 京东数坊画像（本次新增）
+   数据结构：扁平「标签名 / 枚举值 / 占比 / TGI」，38 个维度、227 条明细，全部单选型
+   图表：按需求要求**不采用平台原生的双柱形态**，改用与腾讯如翼一致的
+        「占比柱状 + TGI 折线」双轴组合图（PRD K-05）
+   ============================================================ */
+
+const JD_TAGHI = 500;          // TGI ≥ 500 记为强特征（对齐平台粉柱语义，PRD K-04）
+const JD_MISS  = -1;           // 平台哨兵值：该枚举无法计算 TGI（PRD K-03）
+const JD_UNK   = {'未知':1,'其他':1};
+const JD_TIP_EX='该维度人群互斥归属，各枚举值占比合计 100%（含「未知」「其他」兜底档）';
+const JD_TIP_TGI='TGI = 该枚举值在本人群的占比 ÷ 大盘占比 × 100，大于 100 表示高于大盘；≥ 500 视为强特征并高亮；平台回传 -1 表示无法计算，展示为 -';
+
+let JD={tab:0,sort:{}};
+
+const jdRows = k => J_DATA[k]||[];
+const jdList = k => jdRows(k).map(r=>({n:r[0],v:r[1],s:r[1].toFixed(2)+'%',t:r[2]}));
+const jdOk   = t => t!==JD_MISS && t>0;                       // TGI 是否可用
+const jdTabs = t => J_ORDER.filter(k=>J_META[k]&&J_META[k].tab===t);
+
+/* 排序：默认按元数据（fixed 业务顺序 / desc 占比降序），用户可切换 */
+function jdSorted(k){
+  const m=J_META[k], a=jdList(k), md=JD.sort[k];
+  if(md==='ratio')  return a.slice().sort((x,y)=>y.v-x.v);
+  if(md==='ratioA') return a.slice().sort((x,y)=>x.v-y.v);
+  if(md==='tgi')    return a.slice().sort((x,y)=>(jdOk(y.t)?y.t:-1)-(jdOk(x.t)?x.t:-1));
+  if(md==='tgiA')   return a.slice().sort((x,y)=>(jdOk(x.t)?x.t:1e9)-(jdOk(y.t)?y.t:1e9));
+  return m.ord==='desc' ? a.slice().sort((x,y)=>y.v-x.v) : a.slice();   // fixed：数据已按 fo 重排
+}
+function jdSet(ek,m){ JD.sort[du(ek)]=m; renderJdCards(); }
+const jdArrow=(c,d,a)=>c===d?'↓':c===a?'↑':'⇅';
+
+/* 三行浮层：枚举值 + 占比 + TGI（PRD 板块 3） */
+function jdTip(x,extra){
+  const dot=c=>`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${c};margin-right:6px;vertical-align:1px"></span>`;
+  const h=`<div style="font-weight:600;margin-bottom:3px">${esc(x.n)}</div>`
+   +`<div>${dot('#4C8DFF')}占比<b style="margin-left:14px">${x.s}</b></div>`
+   +`<div>${dot('#FF9A2E')}TGI<b style="margin-left:14px">${jdOk(x.t)?x.t:'-'}</b></div>`
+   +(x.t===JD_MISS?`<div style="color:#C9CDD4;margin-top:4px">平台回传 -1：该枚举值无法计算 TGI</div>`:'')
+   +(jdOk(x.t)&&x.t>=JD_TAGHI?`<div style="color:#FFB27A;margin-top:4px">强特征：TGI ≥ ${JD_TAGHI}</div>`:'')
+   +(extra?`<div style="color:#C9CDD4;margin-top:4px">${esc(extra)}</div>`:'');
+  return `data-tip="" data-tiphtml="${h.replace(/"/g,'&quot;')}"`;
+}
+
+/* ---------- 双轴柱线组合图（形态与腾讯如翼一致，PRD K-05） ---------- */
+function jdChart(k){
+  const a=jdSorted(k), n=a.length, md=JD.sort[k]||(J_META[k].ord==='desc'?'ratio':'');
+  const mxv=niceMax(Math.max(...a.map(x=>x.v),0.01));
+  const tgs=a.filter(x=>jdOk(x.t)).map(x=>x.t);
+  const hasT=tgs.length>0, mxt=hasT?niceMax(Math.max(...tgs,100)):0;
+  const miss=a.filter(x=>x.t===JD_MISS).length;
+  const hi=a.filter(x=>jdOk(x.t)&&x.t>=JD_TAGHI).length;
+
+  const gl=[0,.25,.5,.75,1].map(g=>`<div class="gl" style="bottom:${g*100}%">
+      <span class="l">${(mxv*g).toFixed(mxv<2?2:mxv<20?1:0)}%</span>
+      ${hasT?`<span class="r">${Math.round(mxt*g)}</span>`:''}</div>`).join('');
+  const base=hasT&&mxt>100?`<div class="base" style="bottom:${100/mxt*100}%"><em>大盘 100</em></div>`:'';
+
+  const px=i=>(i+0.5)/n*100;
+  let segs=[],cur=[];
+  a.forEach((x,i)=>{ if(jdOk(x.t)) cur.push(`${px(i)},${100-x.t/mxt*100}`); else {if(cur.length>1)segs.push(cur);cur=[];} });
+  if(cur.length>1) segs.push(cur);
+  const svg=hasT?`<svg class="dx-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+      ${segs.map(s=>`<polyline points="${s.join(' ')}" vector-effect="non-scaling-stroke"/>`).join('')}</svg>
+    ${a.map((x,i)=>jdOk(x.t)?`<span class="dx-dot${x.t>=JD_TAGHI?' jd-hi':''}" style="left:${px(i)}%;bottom:${x.t/mxt*100}%"></span>`:'').join('')}`:'';
+
+  const cols=a.map(x=>`<div class="col" ${jdTip(x)}>
+      <i class="${JD_UNK[x.n]?'jd-unk':''}" style="height:${x.v>0?Math.max(x.v/mxv*100,.8):0}%"></i></div>`).join('');
+
+  const wide=n>9, w=wide?`--dxw:${n*46}px`:'';
+  return `<div class="dx-ctl">
+      <span class="dx-sort${md.startsWith('ratio')?' on':''}" onclick="jdSet('${eu(k)}','${md==='ratio'?'ratioA':'ratio'}')">占比 ${jdArrow(md,'ratio','ratioA')}</span>
+      <span class="sp"></span>
+      ${hasT?`<span class="dx-sort t${md.startsWith('tgi')?' on':''}" onclick="jdSet('${eu(k)}','${md==='tgi'?'tgiA':'tgi'}')">TGI ${jdArrow(md,'tgi','tgiA')}</span>`
+            :'<span class="muted" style="font-size:11px">TGI 全部不可用</span>'}
+    </div>
+    <div class="dx-wrap"><div class="dx" style="${w}">${gl}${base}${svg}<div class="dx-cols">${cols}</div></div>
+      <div class="dx-x" style="${w}">${a.map(x=>`<span>${esc(x.n)}</span>`).join('')}</div></div>
+    <div class="dx-lg"><span><i></i>占比</span>${hasT?'<span><i class="t"></i>TGI</span>':''}
+      ${hi?`<span><i class="h"></i>强特征 TGI ≥ ${JD_TAGHI}（${hi} 项）</span>`:''}
+      ${miss?`<span class="jd-miss">${miss} 项 TGI 平台回传 -1，折线已断开</span>`:''}</div>`;
+}
+
+/* ---------- 卡片 ---------- */
+function jdCardHTML(k){
+  const m=J_META[k], a=jdList(k);
+  const sum=a.reduce((s,x)=>s+x.v,0);
+  const unk=a.filter(x=>JD_UNK[x.n]).reduce((s,x)=>s+x.v,0);
+  const head=`<div class="ct2"><h4>${esc(k)}</h4>
+      <span class="qm" title="${esc(JD_TIP_EX+'。'+JD_TIP_TGI)}">?</span>
+      ${unk>0?`<span class="b-ident" title="「未知 / 其他」兜底档合计 ${unk.toFixed(2)}%，占比越高该维度结论越需谨慎">兜底 ${unk.toFixed(2)}%</span>`:''}
+      <span class="sp"></span>
+      <div class="sub">单选型 · 占比合计 ${sum.toFixed(2)}% · ${m.ord==='desc'?'按占比降序':'按业务顺序'}</div></div>`;
+  if(!a.some(x=>x.v>0)) return `<div class="pf-card">${head}<div class="pf-empty">该维度暂无数据</div></div>`;
+  return `<div class="pf-card">${head}${jdChart(k)}</div>`;
+}
+
+/* ---------- 页面渲染 ---------- */
+function renderJdTabs(){
+  document.getElementById('pfTabs').innerHTML=J_TABS.map((t,i)=>{
+    const has=jdTabs(i).some(k=>jdList(k).some(x=>x.v>0));
+    return `<span class="${i===JD.tab?'on':''}${has?'':' dis'}" ${has?`onclick="JD.tab=${i};renderJdFeat();renderJdCards();renderJdTabs()"`:'title="该分组暂无数据"'}>${t}</span>`;
+  }).join('');
+}
+/* 显著特征：当前 Tab 下 TGI 最高的枚举值，排除兜底档与 TGI 不可用项（PRD 板块 4） */
+function renderJdFeat(){
+  const list=jdTabs(JD.tab).map(k=>{
+    const a=jdList(k).filter(x=>!JD_UNK[x.n]&&jdOk(x.t)&&x.v>=1).sort((x,y)=>y.t-x.t||y.v-x.v);
+    return a.length?{k,x:a[0]}:null;
+  }).filter(Boolean).sort((p,q)=>q.x.t-p.x.t).slice(0,12);
+  const chips=list.map(o=>`<span class="pf-chip" ${jdTip(o.x)}>${esc(o.k)}：<b>${esc(o.x.n)}</b>
+      <span style="color:${o.x.t>=JD_TAGHI?'#E8811A':'var(--brand)'};font-size:11px;margin-left:4px">TGI ${o.x.t}</span></span>`).join('');
+  document.getElementById('pfFeat').innerHTML=
+    `<div class="lb">目标人群显著特征<div style="font-weight:400;font-size:11px;color:var(--text-3)">占比≥1% 且 TGI 最高｜已排除兜底档</div></div>
+     <div class="chips">${chips||'<span class="muted small">当前分组无可用标签</span>'}</div>`;
+}
+function renderJdCards(){
+  document.getElementById('pfBody').innerHTML=
+    `<div class="pf-grid">${jdTabs(JD.tab).map(jdCardHTML).join('')}</div>`;
+}
+function renderJdBody(){
+  JD={tab:0,sort:{}};
+  renderJdTabs(); renderJdFeat(); renderJdCards();
+}
+
 function pfExport(){
   if(PF.plat==='腾讯如翼')
     toast(`已导出 ${PF.r[3]}_人群画像_腾讯如翼_20260812.csv（全量 3,355 条标签明细，含 TGI 与三级标签）`);
+  else if(PF.plat==='京东数坊')
+    toast(`已导出 ${PF.r[3]}_人群画像_京东数坊_20260812.csv（38 个维度、227 条标签明细，含 TGI）`);
   else if(PF.plat==='品牌数据引擎')
     toast(`已导出 ${PF.r[3]}_人群画像_品牌数据引擎_20260812.csv（6 个维度、96 条标签明细）`);
   else
