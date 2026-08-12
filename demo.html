@@ -553,6 +553,33 @@ body.show-hl th.pf-hl,body.show-hl td.pf-hl{outline-offset:-1px;background:rgba(
 
 @media (max-width:1240px){ .rk-hd .c3,.rk-r .c3{width:130px} }
 
+/* ============================================================
+   ★★ 品牌数据引擎画像（本次新增）
+   ============================================================ */
+.pf-src.bde{background:#FFF3E4;color:#E8811A}
+.b-ident{display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:3px;
+  font-size:11px;background:var(--warn-bg);color:#A65B00;cursor:help;flex:none}
+/* 饼图 */
+.bp{display:flex;align-items:center;gap:14px;margin-top:4px}
+.bp-svg{width:132px;height:132px;flex:none}
+.bp-svg path{transition:opacity .15s;cursor:default}
+.bp-svg:hover path{opacity:.55}
+.bp-svg path:hover{opacity:1 !important}
+.bp-lg{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;max-height:150px;overflow-y:auto;padding-right:4px}
+.bp-lg::-webkit-scrollbar{width:6px}
+.bp-lg::-webkit-scrollbar-thumb{background:var(--text-4);border-radius:3px}
+.bp-i{display:flex;align-items:center;gap:7px;font-size:12px}
+.bp-i i{width:9px;height:9px;border-radius:2px;flex:none}
+.bp-i .nm{flex:1;min-width:0;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bp-i .vl{flex:none;color:var(--text-2);font-variant-numeric:tabular-nums}
+/* 省份地图 */
+.bm .cartogram{height:238px;margin-top:4px}
+.bm-top{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:9px;font-size:11px;color:var(--text-3)}
+.bm-t b{display:inline-grid;place-items:center;width:14px;height:14px;border-radius:3px;
+  background:var(--brand-weak);color:var(--brand);font-size:10px;margin-right:3px;vertical-align:-2px}
+.bm-unk{margin-top:8px;padding:6px 9px;background:var(--warn-bg);border-radius:4px;
+  font-size:11px;color:#A65B00;line-height:1.6}
+
 @media (max-width:1100px){
   .create-grid,.bottom-bar,.mode-grid{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(2,1fr)}
@@ -1594,7 +1621,8 @@ const PUSH_ROWS = {
   'AP000900024':[
     ['腾讯如翼','RY-58088395','IDFA','DM_夏季促销_大盘人群_000000C_1','RY-PKG-20260620-0031','全量覆盖','33,095','32,740','2026-08-06 03:03','6'],
     ['巨量云图','YT-1863692771173707','OAID','DM_夏季促销_大盘人群_000000C_2','YT-PKG-20260620-7712','全量覆盖','19,293','18,904','2026-08-06 03:04','6'],
-    ['巨量云图','YT-1863692771173707','IMEI','DM_夏季促销_大盘人群_000000C_4','YT-PKG-20260620-7714','全量覆盖','2','2','2026-08-06 03:04','6']
+    ['巨量云图','YT-1863692771173707','IMEI','DM_夏季促销_大盘人群_000000C_4','YT-PKG-20260620-7714','全量覆盖','2','2','2026-08-06 03:04','6'],
+    ['品牌数据引擎','BDE-40027715','OAID','DM_夏季促销_大盘人群_000000C_2','BDE-PKG-20260620-3308','全量覆盖','19,293','18,662','2026-08-06 03:05','6']
   ]
 };
 function openPushDetail(id){
@@ -1901,12 +1929,13 @@ const tipAttr=(n,v)=>`data-tip="${esc(n)}" data-tipv="${esc(v)}"`;
    naPlat 平台不支持画像 / naSmall 小样本 / naRow 分包本身不可用
    ★ 已支持的二方平台：巨量云图、腾讯如翼；两平台状态机完全一致，仅数据模型与页面不同 */
 const PF_SMALL=1000;
-const PF_PLATS={'巨量云图':1,'腾讯如翼':1};
+const PF_PLATS={'巨量云图':1,'腾讯如翼':1,'品牌数据引擎':1};
 const PF_STATE={
   'AP000900039#0':'fail',     // 生成失败
   'AP000900039#1':'running',  // 生成中（演示轮询到状态变更后自动切换）
   'AP000900024#0':'done',     // ★ 腾讯如翼：已生成（可直接查看）
-  'AP000900024#1':'done'      // 巨量云图：已生成（同一本地包，两平台各一份画像）
+  'AP000900024#1':'done',     // 巨量云图：已生成
+  'AP000900024#3':'done'      // ★ 品牌数据引擎：已生成（同一本地包，三平台各一份画像）
 };
 const PF_FAILMSG='云图返回：人群包画像任务执行失败（任务 8871-P3，错误码 PROFILE_TASK_FAILED），可重新生成';
 let pfTimers={};
@@ -1964,17 +1993,17 @@ function pfBack(){ openPushDetail(PF.pkg); }
 function renderProfile(){
   const r=PF.r, p=PKGS.find(x=>x.id===PF.pkg);
   const st=pfStatus(PF.pkg,PF.row,r);
-  const ry=PF.plat==='腾讯如翼';                      // ★ 如翼版 / 云图版
+  const ry=PF.plat==='腾讯如翼', bd=PF.plat==='品牌数据引擎';   // ★ 三个平台版本
   document.getElementById('pfSub').innerHTML=
     `数据来源：<b>${esc(PF.plat)}</b>回传的人群画像标签`;
   document.getElementById('pfHead').innerHTML=`
     <div class="h1">${esc(r[3])} <span class="copy" onclick="toast('平台包名已复制')">⧉ 复制</span>
       ${st==='done'?'<span class="pf-ok">● 计算成功</span>':''}
-      <span class="pf-src${ry?'':' yt'}">${esc(PF.plat)}</span></div>
+      <span class="pf-src${ry?'':(bd?' bde':' yt')}">${esc(PF.plat)}</span></div>
     <div class="meta">
       <span>所属人群包 <b>${esc(p.name)}</b> · <b>${p.id}</b></span><span class="sep">|</span>
       <span>设备 ID 类型 <b>${r[2]}</b></span><span class="sep">|</span>
-      <span>${ry?'人群规模':'覆盖人数'} <b>${r[7]}</b></span><span class="sep">|</span>
+      <span>${ry||bd?'人群规模':'覆盖人数'} <b>${r[7]}</b></span><span class="sep">|</span>
       <span>画像生成时间 <b>${st==='done'?'2026-08-11 15:26':'—'}</b></span><span class="sep">|</span>
       <span>数据来源 <b>${esc(PF.plat)}</b></span>
     </div>`;
@@ -1999,10 +2028,11 @@ function renderProfile(){
   }
   bar.style.display='';
   document.getElementById('pfDl').textContent = ry?'⤓ 下载数据':'⤓ 下载';
-  /* 工具条「不做项」按需求要求显式标注，便于评审核对 */
+  /* 工具条「不做项」与平台特性说明，便于评审核对 */
   document.getElementById('pfBarNote').innerHTML = ry
     ? '按需求不提供「更新 / 删除 / 新窗口打开」，Tab 不含「配置信息」'
-    : '';
+    : bd ? '该平台画像为单页形态：无二级 Tab、无 TGI、无下钻' : '';
+  if(bd){ renderBdeBody(); return; }
   if(ry){ renderRuyiBody(); return; }
   renderPfTabs(); renderPfFeat(); renderPfCards();
 }
@@ -2561,9 +2591,145 @@ function renderRuyiBody(){
   renderRyTabs(); renderRyFeat(); renderRyCards();
 }
 
+
+/* ============================================================
+   ★★ 品牌数据引擎画像（本次新增）
+   ⚠ 该平台未提供原始数据文件，以下数据结构与样本数据均由平台页面截图推断，
+     字段名与口径需与平台书面确认后再实现（PRD Q-001，阻塞项）。
+   特征：单页无二级 Tab｜无 TGI｜扁平「维度-标签-占比」两层｜几乎每个维度含「未知」兜底档
+   ============================================================ */
+
+/* 推断的原始数据结构：维度名 → [[标签, 占比], ...]（占比含「未知」，单选型合计 100%） */
+const B_DATA={
+"预测性别":[["女","70.20%"],["未知","24.05%"],["男","5.75%"]],
+"预测年龄":[["18-24岁","27.64%"],["25-29岁","13.42%"],["30-34岁","9.86%"],["35-39岁","5.71%"],["40-44岁","4.33%"],["45-49岁","3.05%"],["50-54岁","2.28%"],["55-59岁","1.86%"],[">=60岁","1.67%"],["未知","30.18%"]],
+"预测省份":[["广东","9.82%"],["江苏","8.14%"],["浙江","7.36%"],["山东","6.91%"],["河南","5.63%"],["四川","5.12%"],["河北","4.48%"],["湖北","4.05%"],["湖南","3.87%"],["安徽","3.72%"],["福建","3.44%"],["上海","3.21%"],["北京","3.08%"],["陕西","2.76%"],["辽宁","2.54%"],["江西","2.41%"],["重庆","2.33%"],["广西","2.18%"],["云南","2.05%"],["山西","1.86%"],["黑龙江","1.62%"],["吉林","1.34%"],["贵州","1.31%"],["内蒙古","1.12%"],["天津","1.05%"],["新疆","0.94%"],["甘肃","0.88%"],["海南","0.61%"],["宁夏","0.34%"],["青海","0.28%"],["西藏","0.21%"],["香港","0.18%"],["澳门","0.09%"],["台湾","0.06%"],["未知","5.01%"]],
+"人生阶段":[["单身","12.00%"],["恋爱期","7.00%"],["准备结婚期","13.00%"],["已婚未育","3.20%"],["育婴期","4.20%"],["已婚已育","16.80%"],["孝敬期","0.80%"],["未知","43.00%"]],
+"兴趣偏好":[["运动一族","38.62%"],["数码达人","37.94%"],["烹饪达人","32.41%"],["买鞋控","31.95%"],["白富美","28.53%"],["爱包人","25.74%"],["职场办公","22.13%"],["二手买家","21.28%"],["速食客","19.42%"],["户外一族","18.65%"],["美妆达人","17.83%"],["母婴人群","16.20%"],["家装一族","14.77%"],["宠物之家","13.05%"],["游戏玩家","12.46%"],["影音发烧","11.88%"],["旅行常客","10.92%"],["汽车一族","9.34%"],["健康养生","8.71%"],["书香门第","7.56%"],["潮玩收藏","6.42%"],["户外骑行","5.18%"],["亲子出游","4.63%"],["高奢客群","3.27%"]],
+"月均消费金额":[["0-499元","44.20%"],["500-999元","21.60%"],["1000-1499元","12.80%"],["1500-1999元","6.00%"],["2000-2999元","5.40%"],["3000-5999元","4.40%"],["6000-10000元","1.00%"],["10000元以上","0.60%"],["未知","4.00%"]]
+};
+/* 维度元数据：ch 图表 pie饼图/map地图/bar纵向柱状/hbar横向条形｜ex 1=单选(占比,合计100%) 0=多选(覆盖率)
+   ord fixed=按业务顺序 desc=按占比降序｜top 页面默认展示条数｜note 口径说明（对应平台的 ? 图标） */
+const B_META={
+  '预测性别'    :{ch:'pie', ex:1,ord:'desc' ,note:'基于平台算法预测的性别分布，未识别出性别的设备计入「未知」'},
+  '预测年龄'    :{ch:'pie', ex:1,ord:'fixed',note:'基于平台算法预测的年龄段分布，未识别出年龄的设备计入「未知」'},
+  '预测省份'    :{ch:'map', ex:1,ord:'desc' ,note:'基于设备常驻地预测的省份分布；「未知」无法落图，单独在地图下方标注'},
+  '人生阶段'    :{ch:'bar', ex:1,ord:'fixed',note:'按婚育状态划分的人生阶段，各阶段互斥，未识别的设备计入「未知」'},
+  '兴趣偏好'    :{ch:'hbar',ex:0,ord:'desc' ,top:10,note:'同一用户可同时命中多个兴趣标签，各标签覆盖率相互独立，合计可超过 100%'},
+  '月均消费金额':{ch:'hbar',ex:1,ord:'fixed',note:'近 90 天月均消费金额分箱，各档互斥，未识别的设备计入「未知」'}
+};
+/* 卡片固定顺序：左右两列并排，与云图版 / 如翼版保持同一布局规范（PRD 附录 C） */
+const B_ORDER=['预测性别','预测年龄','预测省份','人生阶段','兴趣偏好','月均消费金额'];
+const B_UNKNOWN='未知';
+const B_PIE=['#1F6BFF','#37C6C0','#F7B500','#8C6FEF','#FF7D00','#0FC6C2','#F76965','#7BA1FF','#B0C4DE','#C9CDD4'];
+
+const bdata = k => (B_DATA[k]||[]).map(x=>({n:x[0],v:pv(x[1]),s:x[1]}));
+/* 「未知」处理（PRD K-04）：如实展示、不剔除、不重新归一化；但需算出已识别占比 */
+const bIdent = k => { const a=bdata(k), u=a.find(x=>x.n===B_UNKNOWN); return u?100-u.v:null; };
+const bNoUnk = k => bdata(k).filter(x=>x.n!==B_UNKNOWN);
+function bSorted(k){
+  const m=B_META[k], a=bdata(k);
+  return m.ord==='desc' ? a.slice().sort((x,y)=>y.v-x.v) : a.slice();
+}
+function bTip(n,s,unit){ return tipAttr(n+'（'+unit+'）',s); }
+
+/* ---------- 饼图（SVG 扇形，逐扇 hover） ---------- */
+function bPie(k){
+  const a=bSorted(k), unit=B_META[k].ex?'占比':'覆盖率';
+  const R=52,C=60; let acc=0;
+  const paths=a.map((x,i)=>{
+    const a0=acc/100*2*Math.PI-Math.PI/2; acc+=x.v;
+    const a1=acc/100*2*Math.PI-Math.PI/2;
+    const lg=x.v>50?1:0;
+    const p=(ang)=>[(C+R*Math.cos(ang)).toFixed(2),(C+R*Math.sin(ang)).toFixed(2)];
+    const [x0,y0]=p(a0),[x1,y1]=p(a1);
+    if(x.v<=0) return '';
+    const d=x.v>=99.99?`M${C},${C-R} A${R},${R} 0 1,1 ${C-0.01},${C-R} Z`
+                      :`M${C},${C} L${x0},${y0} A${R},${R} 0 ${lg},1 ${x1},${y1} Z`;
+    return `<path d="${d}" fill="${B_PIE[i%B_PIE.length]}" ${bTip(x.n,x.s,unit)}
+      ${x.n===B_UNKNOWN?'opacity=".45"':''}/>`;
+  }).join('');
+  const lg=a.map((x,i)=>`<div class="bp-i" ${bTip(x.n,x.s,unit)}>
+      <i style="background:${B_PIE[i%B_PIE.length]};${x.n===B_UNKNOWN?'opacity:.45':''}"></i>
+      <span class="nm">${esc(x.n)}</span><span class="vl">${x.s}</span></div>`).join('');
+  return `<div class="bp"><svg viewBox="0 0 120 120" class="bp-svg">${paths}</svg>
+    <div class="bp-lg">${lg}</div></div>`;
+}
+
+/* ---------- 省份热力地图（复用云图版网格 cartogram） ---------- */
+function bMap(k){
+  const a=bdata(k), unk=a.find(x=>x.n===B_UNKNOWN);
+  const prov=a.filter(x=>x.n!==B_UNKNOWN), pm={};
+  prov.forEach(x=>pm[x.n]=x);
+  const mx=Math.max(...prov.map(x=>x.v),0.01);
+  const cells=Object.keys(CG_POS).map(n=>{
+    const d=pm[n], t=d?d.v/mx:0;
+    const bg=d?`background:rgba(31,107,255,${(.10+t*.88).toFixed(3)})`:'background:#F2F3F5';
+    return `<div class="cg ${t>.55?'hi':''}" style="grid-row:${CG_POS[n][0]};grid-column:${CG_POS[n][1]};${bg}"
+      ${bTip(n,d?d.s:'无数据','占比')}>${n}</div>`;
+  }).join('');
+  const top=prov.slice().sort((x,y)=>y.v-x.v).slice(0,5)
+    .map((x,i)=>`<span class="bm-t"><b>${i+1}</b> ${esc(x.n)} ${x.s}</span>`).join('');
+  return `<div class="bm"><div class="cartogram">${cells}</div>
+    <div class="cg-legend"><span>低</span><span class="ramp"></span><span>高 ${mx.toFixed(2)}%</span>
+      <span style="margin-left:auto">网格地图为原型示意</span></div>
+    <div class="bm-top">TOP5 ${top}</div>
+    ${unk?`<div class="bm-unk">「未知」${unk.s} 无省份归属，无法落图，未计入地图着色（PRD K-04）</div>`:''}</div>`;
+}
+
+/* ---------- 卡片 ---------- */
+function bCardHTML(k){
+  const m=B_META[k], a=bSorted(k), unit=m.ex?'占比':'覆盖率';
+  const ident=bIdent(k);
+  const head=`<div class="ct2"><h4>${esc(k)}</h4><span class="qm" title="${esc(m.note)}">?</span>
+    ${ident!==null?`<span class="b-ident" title="已识别占比 = 100% − 未知占比，识别率偏低时该维度结论需谨慎使用">已识别 ${ident.toFixed(2)}%</span>`:''}
+    <span class="sp"></span><div class="sub">${m.ex?'单选型 · 各标签占比合计 100%（含未知）':'多选型 · 覆盖率合计可超过 100%'}</div></div>`;
+  if(!a.some(x=>x.v>0)) return `<div class="pf-card">${head}<div class="pf-empty">该维度暂无数据</div></div>`;
+  let body;
+  if(m.ch==='pie')       body=bPie(k);
+  else if(m.ch==='map')  body=bMap(k);
+  else if(m.ch==='bar')  body=`<div class="pf-unit">${unit}</div>${barChart(a,m.ord==='fixed'?1:0)}`;
+  else {
+    const shown=m.top?a.slice(0,m.top):a;
+    body=`<div class="pf-unit">${unit}${m.top&&a.length>m.top?` · 默认展示 TOP ${m.top}（共 ${a.length} 项）`:''}</div>
+      <div class="hb">${hbList(shown)}</div>
+      ${m.top&&a.length>m.top?`<div class="pf-more"><span class="link" onclick="BD.all['${eu(k)}']=1;renderBdeCards()">查看全部 ${a.length} 项 ▾</span></div>`:''}`;
+    if(BD.all[k]) body=`<div class="pf-unit">${unit} · 全部 ${a.length} 项</div><div class="hb hb-scroll">${hbList(a)}</div>
+      <div class="pf-more"><span class="link" onclick="BD.all['${eu(k)}']=0;renderBdeCards()">收起 ▴</span></div>`;
+  }
+  return `<div class="pf-card">${head}${body}</div>`;
+}
+
+/* ---------- 页面渲染 ---------- */
+let BD={all:{}};
+function renderBdeCards(){
+  document.getElementById('pfBody').innerHTML=
+    `<div class="pf-grid">${B_ORDER.map(bCardHTML).join('')}</div>`;
+}
+/* 显著特征：各维度占比最高的标签，**排除「未知」**（PRD K-04 / 板块 5） */
+function renderBdeFeat(){
+  const chips=B_ORDER.map(k=>{
+    const a=bNoUnk(k).sort((x,y)=>y.v-x.v);
+    if(!a.length||a[0].v<=0) return '';
+    return `<span class="pf-chip" ${bTip(a[0].n,a[0].s,B_META[k].ex?'占比':'覆盖率')}>${esc(k)}：<b>${esc(a[0].n)}</b>
+      <span style="color:var(--brand);font-size:11px;margin-left:4px">${a[0].s}</span></span>`;
+  }).filter(Boolean).join('');
+  document.getElementById('pfFeat').innerHTML=
+    `<div class="lb">目标人群显著特征<div style="font-weight:400;font-size:11px;color:var(--text-3)">已排除「未知」档</div></div>
+     <div class="chips">${chips}</div>`;
+}
+function renderBdeBody(){
+  BD={all:{}};
+  /* 该平台无二级 Tab，工具条左侧展示单一静态标识（PRD K-02） */
+  document.getElementById('pfTabs').innerHTML='<span class="on" style="cursor:default">人群画像</span>';
+  renderBdeFeat(); renderBdeCards();
+}
+
 function pfExport(){
   if(PF.plat==='腾讯如翼')
     toast(`已导出 ${PF.r[3]}_人群画像_腾讯如翼_20260812.csv（全量 3,355 条标签明细，含 TGI 与三级标签）`);
+  else if(PF.plat==='品牌数据引擎')
+    toast(`已导出 ${PF.r[3]}_人群画像_品牌数据引擎_20260812.csv（6 个维度、96 条标签明细）`);
   else
     toast(`已导出 ${PF.r[3]}_人群画像_20260811.csv（全量 3,049 条标签明细）`);
 }
