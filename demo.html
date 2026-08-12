@@ -495,7 +495,7 @@ body.show-hl th.pf-hl,body.show-hl td.pf-hl{outline-offset:-1px;background:rgba(
   font-size:12px;color:var(--text-2);font-weight:500}
 .rk-hd .c1{flex:1;min-width:0}
 .rk-hd .c2{width:56px;flex:none;text-align:right}
-.rk-hd .c3{width:210px;flex:none}
+.rk-hd .c3{width:170px;flex:none}
 .rk-hd .c4{width:52px;flex:none}
 .rk-bd{max-height:322px;overflow-y:auto}
 .rk-bd.tall{max-height:none}
@@ -508,10 +508,10 @@ body.show-hl th.pf-hl,body.show-hl td.pf-hl{outline-offset:-1px;background:rgba(
 .rk-r .c2{width:56px;flex:none;text-align:right;font-variant-numeric:tabular-nums;color:var(--text-2)}
 .rk-r .c2.hi{color:var(--brand);font-weight:600}
 .rk-r .c2.na{color:var(--text-4)}
-.rk-r .c3{width:210px;flex:none;display:flex;align-items:center;gap:8px}
+.rk-r .c3{width:170px;flex:none;display:flex;align-items:center;gap:8px}
 .rk-r .c3 .tr{flex:1;min-width:0;height:11px;background:var(--border-2);border-radius:2px;overflow:hidden}
 .rk-r .c3 .fl{display:block;height:100%;background:var(--brand);border-radius:2px;transition:width .25s}
-.rk-r .c3 .vl{width:62px;flex:none;text-align:right;font-variant-numeric:tabular-nums;color:var(--text-2)}
+.rk-r .c3 .vl{width:58px;flex:none;text-align:right;font-variant-numeric:tabular-nums;color:var(--text-2)}
 .rk-r .c3 .z{width:100%;color:var(--text-4)}
 .rk-r .c4{width:52px;flex:none;text-align:right}
 .rk-r .drill{color:var(--brand);cursor:pointer;font-size:11px;white-space:nowrap}
@@ -551,7 +551,7 @@ body.show-hl th.pf-hl,body.show-hl td.pf-hl{outline-offset:-1px;background:rgba(
 .dr-bd .rk-bd{max-height:none}
 .dr-sr{margin-bottom:8px}
 
-@media (max-width:1240px){ .rk-hd .c3,.rk-r .c3{width:150px} }
+@media (max-width:1240px){ .rk-hd .c3,.rk-r .c3{width:130px} }
 
 @media (max-width:1100px){
   .create-grid,.bottom-bar,.mode-grid{grid-template-columns:1fr}
@@ -2374,7 +2374,7 @@ function ryDualChart(k,arr,drillK){
       <i style="height:${x.v>0?Math.max(x.v/mxv*100,.8):0}%"></i></div>`;
   }).join('');
 
-  const wide=n>10, w=wide?`--dxw:${n*58}px`:'';
+  const wide=n>9, w=wide?`--dxw:${n*46}px`:'';   /* 卡片统一半宽，柱距收窄 */
   return `<div class="dx-ctl">
       <span class="dx-sort${mode.startsWith('ratio')?' on':''}" onclick="rySet('${eu(k)}','${mode==='ratio'?'ratioA':'ratio'}')">覆盖率 ${ryArrow(mode,'ratio','ratioA')}</span>
       <span class="sp"></span>
@@ -2415,22 +2415,36 @@ function ryRankTable(k,arr,o){
 }
 
 /* ---------- 卡片 ---------- */
-function ryTabCards(t){ return Object.keys(R_META).filter(k=>R_META[k].tab===t&&k!=='常住地-城市'); }
+/* ---------- 卡片固定顺序（PRD 附录 D）----------
+   全部卡片一律左右两列布局，不存在整行卡片；顺序写死，不随平台回传顺序变化。
+   「常住地-城市」并入「常住地」卡片，不单独成卡。 */
+const R_ORDER=[
+  /* 用户属性：性别 → 年龄 → 地域（常住地 与 常住城市等级 左右并排）→ 其余基本信息 */
+  '性别','年龄','常住地-省份','常住城市等级','婚恋育儿','学历',
+  /* 资产属性：资产状况 → 设备信息 */
+  '房产','金融','财产状态','交通','设备持机时长','设备价格','设备品牌型号','操作系统版本',
+  /* 行为意向：触达行为 → 消费兴趣 → 电商行为 → 内容兴趣 → 生活场景 */
+  '国内游（指定市）','国内游（指定省）','预测场所到访','出境游','旅行方式','旅行目的','旅行主题',
+  '家居家装','美容、个护','互联网电子产品','运动户外','服饰鞋帽箱包',
+  '通用兴趣','核心人群','潜在人群',
+  '内容资讯','图书','娱乐休闲','游戏',
+  '孕产育儿','商务服务','教育','软件工具','旅游','餐饮美食','医疗健康','生活服务'
+];
+function ryTabCards(t){ return R_ORDER.filter(k=>R_META[k]&&R_META[k].tab===t); }
 
 function ryCardHTML(k){
   if(k==='常住地-省份') return ryGeoCard();
   const m=R_META[k], a=ryL1(k);
   const tipTxt=(m.ex?RY_TIP_EX:RY_TIP_MU)+'。'+RY_TIP_TGI;
-  const wide = m.ch==='rank' ? a.length>16 : a.length>8;
   const head=`<div class="ct2"><h4>${esc(k)}</h4><span class="qm" title="${esc(tipTxt)}">?</span>
       ${m.depth>1?'<span class="pf-src" style="background:#F5F0FF;color:#722ED1">可下钻</span>':''}
       <span class="sp"></span>${searchBox(k,a.length)}<div class="sub">${esc(m.cat)}</div></div>`;
   if(!a.some(x=>x.v>0))
-    return `<div class="pf-card${wide?' full':''}">${head}<div class="pf-empty">该维度暂无数据</div></div>`;
+    return `<div class="pf-card">${head}<div class="pf-empty">该维度暂无数据</div></div>`;
   const body = m.ch==='dual'
     ? ryDualChart(k,a,m.depth>1?k:null)
     : ryRankTable(k,a,{col1:m.cat,drillK:m.depth>1?k:null,trunc:m.full>ryRows(k).length?m.full:0});
-  return `<div class="pf-card${wide?' full':''}">${head}${body}</div>`;
+  return `<div class="pf-card">${head}${body}</div>`;
 }
 function searchBox(k,n){
   if(n<=30) return '';
@@ -2449,7 +2463,7 @@ function ryGeoCard(){
   const sel=isC?`<select class="sel" style="height:26px;font-size:12px"
       onchange="RY.geoProv=this.value;renderRyCards()">
       <option value="">全部省份</option>${R_PROVS.map(p=>`<option ${p===RY.geoProv?'selected':''}>${p}</option>`).join('')}</select>`:'';
-  return `<div class="pf-card full">
+  return `<div class="pf-card">
     <div class="ct2"><h4>常住地</h4>
       <span class="geo-sub">
         <span class="${isC?'':'on'}" onclick="RY.geoSub='prov';renderRyCards()">省份</span>
