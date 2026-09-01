@@ -294,6 +294,7 @@
     .filter-spacer { flex: 1; }
 
     .form-field { margin-bottom: 16px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
     .form-label { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; font-weight: 650; }
     .required { color: var(--red); }
     .field-help { margin-top: 5px; color: var(--muted); font-size: 11px; }
@@ -604,6 +605,7 @@
       .workspace-select { min-width: 0; }
       .quota { display: none; }
       .summary-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .form-grid { grid-template-columns: 1fr; gap: 0; }
     }
   </style>
 </head>
@@ -619,6 +621,7 @@
     <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
     <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M20 16v4H4v-4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></symbol>
     <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12"/><path d="m18 6-12 12"/></symbol>
     <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></symbol>
@@ -715,7 +718,7 @@
           <div class="detail-layout">
             <div class="stack">
               <div class="card"><div class="card-header"><div><div class="card-title">处理进度</div><div class="card-desc">页面关闭不会停止后台任务，状态以服务端结果为准。</div></div><button class="btn small" id="refreshDetail"><svg class="icon"><use href="#i-refresh"/></svg>刷新</button></div><div class="card-body"><div class="timeline" id="timeline"></div></div></div>
-              <div class="card"><div class="card-header"><div><div class="card-title">来源人群包</div><div class="card-desc">以下内容为任务创建时固化的不可变快照。</div></div></div><div class="table-scroll"><table style="min-width:720px"><thead><tr><th>人群包</th><th>系统 ID</th><th>快照人数</th><th>设备 ID</th><th>生成时间</th></tr></thead><tbody id="detailPackages"></tbody></table></div></div>
+              <div class="card"><div class="card-header"><div><div class="card-title">来源人群包</div><div class="card-desc">以下内容为任务创建时固化的不可变快照；PV 根据人群类型展示曝光或点击次数。</div></div><button class="btn small" id="downloadPackagesExcel"><svg class="icon"><use href="#i-download"/></svg>下载 Excel</button></div><div class="table-scroll"><table style="min-width:860px"><thead><tr><th>人群包</th><th>系统 ID</th><th>UV</th><th title="曝光人群展示曝光 PV；点击人群展示点击 PV">PV</th><th>设备 ID</th><th>生成时间</th></tr></thead><tbody id="detailPackages"></tbody></table></div></div>
             </div>
             <div class="stack"><div class="card" id="incrementCard"></div><div class="card" id="tableCard"></div></div>
           </div>
@@ -728,6 +731,10 @@
     <div class="overlay" data-close-modal></div><div class="modal"><div class="modal-head"><div><div class="modal-title" id="uploadTitle">上传 SDH</div><div class="modal-subtitle">确认人群范围后，系统将创建一个可持续追踪的上传任务。</div></div><button class="icon-button" data-close-modal aria-label="关闭"><svg class="icon"><use href="#i-x"/></svg></button></div>
       <div class="modal-body">
         <div class="form-field"><label class="form-label" for="taskNameInput">任务名称 <span class="required">*</span></label><input class="input" id="taskNameInput" maxlength="50" placeholder="请输入任务名称" /><div class="field-help"><span id="taskNameCount">0</span>/50；多个人群包将合并去重后创建一张表</div><div class="field-error" id="taskNameError">请输入 1—50 个字符的任务名称</div></div>
+        <div class="form-grid">
+          <div class="form-field"><label class="form-label" for="brandIdInput">Brand ID <span class="required">*</span></label><input class="input" id="brandIdInput" maxlength="64" placeholder="请输入 Brand ID" /><div class="field-error" id="brandIdError">请输入 Brand ID</div></div>
+          <div class="form-field"><label class="form-label" for="activityIdInput">Activity ID</label><input class="input" id="activityIdInput" maxlength="64" placeholder="请输入 Activity ID（选填）" /></div>
+        </div>
         <div class="notice blue"><svg class="icon"><use href="#i-info"/></svg><div><strong>处理说明</strong><br>支持 IMEI、IDFA、OAID、CAID；CAID 使用原值，其他类型使用 MD5。频次 ≥ 10,000 的 ID 和不支持类型将被过滤。若存在新增 ID，需将系统生成的输入、输出两个 OSS 地址都填写到 SDH。</div></div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px"><strong>已选人群包（<span id="modalCount">0</span>）</strong><span class="disabled-note">可在提交前移除</span></div><div class="selected-list" id="modalAudienceList"></div><div id="modalFilterNotice"></div>
         <div class="notice"><svg class="icon"><use href="#i-info"/></svg><div>提交后将固化当前人群快照；90 天有效期为阻断条件。多个人群包合并去重后只创建一个任务、一份最终人群包和一张表。</div></div>
@@ -747,12 +754,12 @@
     const fmt = (n) => n == null ? "—" : Number(n).toLocaleString("zh-CN");
 
     const audiences = [
-      {id:"AUD-20260831-018", name:"七夕活动_高频曝光未点击人群", state:"available", status:"生成成功", count:128430, devices:["OAID","IDFA"], time:"2026-08-31 18:42", expiry:"2026-11-29", available:true},
-      {id:"AUD-20260830-011", name:"新品发布_核心城市兴趣人群", state:"available", status:"生成成功", count:86412, devices:["OAID","CAID","Cookie ID"], time:"2026-08-30 15:08", expiry:"2026-11-28", available:true},
-      {id:"AUD-20260828-009", name:"夏季大促_点击未转化人群", state:"available", status:"生成成功", count:214709, devices:["IDFA","OAID","IMEI"], time:"2026-08-28 20:16", expiry:"2026-11-26", available:true},
-      {id:"AUD-20260827-006", name:"品牌焕新_全量触达人群", state:"available", status:"生成成功", count:567830, devices:["OAID"], time:"2026-08-27 13:25", expiry:"2026-11-25", available:true},
-      {id:"AUD-20260826-004", name:"会员日_复访用户", state:"computing", status:"生成中", count:null, devices:["IDFA","OAID"], time:"2026-08-26 11:40", expiry:"—", available:false, reason:"人群仍在生成中"},
-      {id:"AUD-20260518-021", name:"520活动_历史曝光人群", state:"expired", status:"已失效", count:45192, devices:["OAID"], time:"2026-05-18 09:30", expiry:"2026-08-16", available:false, reason:"采集数据已超过 90 天有效期"}
+      {id:"AUD-20260831-018", name:"七夕活动_高频曝光未点击人群", state:"available", status:"生成成功", count:128430, pv:1926450, pvType:"曝光 PV", devices:["OAID","IDFA"], time:"2026-08-31 18:42", expiry:"2026-11-29", available:true},
+      {id:"AUD-20260830-011", name:"新品发布_核心城市兴趣人群", state:"available", status:"生成成功", count:86412, pv:642830, pvType:"曝光 PV", devices:["OAID","CAID","Cookie ID"], time:"2026-08-30 15:08", expiry:"2026-11-28", available:true},
+      {id:"AUD-20260828-009", name:"夏季大促_点击未转化人群", state:"available", status:"生成成功", count:214709, pv:438276, pvType:"点击 PV", devices:["IDFA","OAID","IMEI"], time:"2026-08-28 20:16", expiry:"2026-11-26", available:true},
+      {id:"AUD-20260827-006", name:"品牌焕新_全量触达人群", state:"available", status:"生成成功", count:567830, pv:3245980, pvType:"曝光 PV", devices:["OAID"], time:"2026-08-27 13:25", expiry:"2026-11-25", available:true},
+      {id:"AUD-20260826-004", name:"会员日_复访用户", state:"computing", status:"生成中", count:null, pv:null, pvType:"曝光 PV", devices:["IDFA","OAID"], time:"2026-08-26 11:40", expiry:"—", available:false, reason:"人群仍在生成中"},
+      {id:"AUD-20260518-021", name:"520活动_历史曝光人群", state:"expired", status:"已失效", count:45192, pv:611004, pvType:"曝光 PV", devices:["OAID"], time:"2026-05-18 09:30", expiry:"2026-08-16", available:false, reason:"采集数据已超过 90 天有效期"}
     ];
 
     const stateMap = {
@@ -877,7 +884,8 @@
 
       document.querySelector("#timeline").innerHTML = stages.map((s,i)=>{ const state=stageState(t,i); let copy=s.copy; let time=""; if(state==="done") time="已完成"; if(state==="active") time=t.status==="ready_upload"?"输入、输出 OSS 地址已就绪，等待运营均填入 SDH":t.status==="waiting_mapping"?`每小时轮询中 · 已等待 ${t.waited||"不足 1 小时"}`:"正在后台处理…"; if(state==="failed") {copy=t.error||"处理失败，请查看右侧说明。";time=`失败阶段：${t.errorStage||s.name}`;} return `<div class="timeline-item ${state}"><div class="timeline-node">${state==="done"?"✓":state==="failed"?"!":i+1}</div><div><div class="timeline-title">${s.name}</div><div class="timeline-copy">${copy}</div>${time?`<div class="timeline-time">${time}</div>`:""}</div></div>`; }).join("");
 
-      document.querySelector("#detailPackages").innerHTML = t.packages.map(p=>`<tr><td class="primary-cell">${p.name}</td><td class="secondary-line">${p.id}</td><td>${fmt(p.count)}</td><td><div class="tags">${p.devices.map(d=>`<span class="tag">${d}</span>`).join("")}</div></td><td>${p.time}</td></tr>`).join("");
+      document.querySelector("#detailPackages").innerHTML = t.packages.map(p=>`<tr><td class="primary-cell">${p.name}</td><td class="secondary-line">${p.id}</td><td class="number">${fmt(p.count)}</td><td class="number" title="${p.pvType}"><div>${fmt(p.pv)}</div><div class="disabled-note">${p.pvType}</div></td><td><div class="tags">${p.devices.map(d=>`<span class="tag">${d}</span>`).join("")}</div></td><td>${p.time}</td></tr>`).join("");
+      document.querySelector("#downloadPackagesExcel").disabled = !t.packages.length;
 
       const incrementCard = document.querySelector("#incrementCard");
       if (t.newCount === 0) {
@@ -923,6 +931,8 @@
       if (!selectedAudienceIds.size) return;
       const selected = audiences.filter(a=>selectedAudienceIds.has(a.id));
       document.querySelector("#taskNameInput").value = makeDefaultTaskName(selected);
+      document.querySelector("#brandIdInput").value = "";
+      document.querySelector("#activityIdInput").value = "";
       renderModalSelection();
       document.querySelector("#uploadModal").classList.add("open");
       document.body.style.overflow = "hidden";
@@ -934,14 +944,15 @@
       const suffix = selected.length > 1 ? `等${selected.length}个_SDH_20260901` : "_SDH_20260901";
       return `${selected[0].name}${suffix}`.slice(0,50);
     }
-    function validateTaskName() {
-      const input = document.querySelector("#taskNameInput");
-      const value = input.value.trim();
-      const valid = value.length >= 1 && value.length <= 50;
-      document.querySelector("#taskNameCount").textContent = input.value.length;
-      document.querySelector("#taskNameError").classList.toggle("show", !valid);
-      document.querySelector("#confirmUpload").disabled = selectedAudienceIds.size === 0 || !valid;
-      return valid;
+    function validateUploadForm() {
+      const taskInput = document.querySelector("#taskNameInput");
+      const taskValid = taskInput.value.trim().length >= 1 && taskInput.value.trim().length <= 50;
+      const brandValid = document.querySelector("#brandIdInput").value.trim().length > 0;
+      document.querySelector("#taskNameCount").textContent = taskInput.value.length;
+      document.querySelector("#taskNameError").classList.toggle("show", !taskValid);
+      document.querySelector("#brandIdError").classList.toggle("show", !brandValid);
+      document.querySelector("#confirmUpload").disabled = selectedAudienceIds.size === 0 || !taskValid || !brandValid;
+      return taskValid && brandValid;
     }
     function renderModalSelection() {
       const selected = audiences.filter(a=>selectedAudienceIds.has(a.id));
@@ -950,7 +961,7 @@
       const supported = new Set(["IMEI","IDFA","OAID","CAID"]);
       const unsupported = [...new Set(selected.flatMap(a=>a.devices).filter(d=>!supported.has(d)))];
       document.querySelector("#modalFilterNotice").innerHTML = unsupported.length ? `<div class="notice amber" style="margin-bottom:14px">${icon("alert")}<div><strong>将过滤不支持的设备类型</strong><br>${unsupported.join("、")} 不会进入任务；其余 IMEI/IDFA/OAID 使用 MD5，CAID 使用原值。系统还会过滤频次 ≥ 10,000 的无效 ID。</div></div>` : "";
-      validateTaskName();
+      validateUploadForm();
       document.querySelectorAll(".remove-modal-item").forEach(b=>b.addEventListener("click",()=>{ selectedAudienceIds.delete(b.dataset.id); renderModalSelection(); renderAudiences(); }));
     }
 
@@ -958,13 +969,15 @@
       const btn = document.querySelector("#confirmUpload");
       const selected = audiences.filter(a=>selectedAudienceIds.has(a.id));
       const taskName = document.querySelector("#taskNameInput").value.trim();
-      if (!selected.length || !validateTaskName()) return;
+      const brandId = document.querySelector("#brandIdInput").value.trim();
+      const activityId = document.querySelector("#activityIdInput").value.trim();
+      if (!selected.length || !validateUploadForm()) return;
       btn.disabled = true; btn.innerHTML = `${icon("refresh")}正在创建任务…`;
       setTimeout(()=>{
         const serial = String(tasks.length + 6).padStart(3,"0");
         const total = selected.reduce((sum,a)=>sum+(a.count||0),0);
         const dedup = Math.round(total * (selected.length > 1 ? 0.92 : 1));
-        const created = {id:`SDH-TASK-20260901-${serial}`, name:taskName, packages:selected, status:"validating", dedup, newCount:null, mapped:0, finalRid:null, creator:"luorong", created:"2026-09-01 11:26", updated:"2026-09-01 11:26", inputOss:null, outputOss:null, finalOss:null, table:null, progress:0, retryCount:0, lastPoll:"—", nextPoll:"—"};
+        const created = {id:`SDH-TASK-20260901-${serial}`, name:taskName, brandId, activityId, packages:selected, status:"validating", dedup, newCount:null, mapped:0, finalRid:null, creator:"luorong", created:"2026-09-01 11:26", updated:"2026-09-01 11:26", inputOss:null, outputOss:null, finalOss:null, table:null, progress:0, retryCount:0, lastPoll:"—", nextPoll:"—"};
         tasks.unshift(created); detailTaskId=created.id; selectedAudienceIds.clear(); closeUploadModal(); btn.disabled=false; btn.innerHTML=`${icon("upload")}确认上传`; renderAudiences(); showToast("任务创建成功","系统正在校验人群快照与历史映射。","success"); showPage("detail");
         setTimeout(()=>{ const t=tasks.find(x=>x.id===created.id); if(t&&t.status==="validating"){t.status="file_generating";t.newCount=Math.max(1,Math.round(t.dedup*.14));t.updated="2026-09-01 11:27";renderDetail();} },1000);
         setTimeout(()=>{ const t=tasks.find(x=>x.id===created.id); if(t&&t.status==="file_generating"){t.status="ready_upload";t.inputOss=`oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=20260901_${t.id}`;t.outputOss=`oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=rid_map_all_20260901_${t.id}/`;t.updated="2026-09-01 11:28";t.nextPoll="等待运营配置 SDH";messages.unshift({id:Date.now(),taskId:t.id,unread:true,type:"任务",title:"SDH OSS 地址已就绪",copy:`任务“${t.name}”的输入、输出地址已生成，请填写到 SDH。`,time:"刚刚"});renderMessages();renderDetail();showToast("输入、输出 OSS 地址已就绪","请将两个地址都填写到 SDH；站内待办消息已发送。","success");} },2300);
@@ -978,6 +991,46 @@
       try { await navigator.clipboard.writeText(text); }
       catch { const area=document.createElement("textarea");area.value=text;area.style.position="fixed";area.style.opacity="0";document.body.appendChild(area);area.select();document.execCommand("copy");area.remove(); }
       showToast(title,"已复制到剪贴板。","success");
+    }
+
+    const escapeXml = value => String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;");
+
+    function downloadSourcePackagesExcel() {
+      const task = tasks.find(t=>t.id===detailTaskId);
+      if (!task?.packages?.length) return showToast("暂无可下载数据","当前任务没有来源人群包。","error");
+      try {
+        const headers = ["人群包","系统 ID","UV","PV","PV 口径","设备 ID 类型","生成时间"];
+        const headerRow = headers.map(h=>`<Cell ss:StyleID="Header"><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`).join("");
+        const dataRows = task.packages.map(p=>`<Row>
+          <Cell><Data ss:Type="String">${escapeXml(p.name)}</Data></Cell>
+          <Cell><Data ss:Type="String">${escapeXml(p.id)}</Data></Cell>
+          <Cell><Data ss:Type="Number">${Number(p.count||0)}</Data></Cell>
+          <Cell><Data ss:Type="Number">${Number(p.pv||0)}</Data></Cell>
+          <Cell><Data ss:Type="String">${escapeXml(p.pvType)}</Data></Cell>
+          <Cell><Data ss:Type="String">${escapeXml(p.devices.join(", "))}</Data></Cell>
+          <Cell><Data ss:Type="String">${escapeXml(p.time)}</Data></Cell>
+        </Row>`).join("");
+        const workbook = `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?>
+          <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+            <Styles><Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#EAF2FF" ss:Pattern="Solid"/></Style></Styles>
+            <Worksheet ss:Name="来源人群包"><Table><Row>${headerRow}</Row>${dataRows}</Table></Worksheet>
+          </Workbook>`;
+        const now = new Date();
+        const pad = n=>String(n).padStart(2,"0");
+        const stamp = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+        const blob = new Blob([workbook], {type:"application/vnd.ms-excel;charset=utf-8"});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `SDH_${task.id}_来源人群包_${stamp}.xls`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),1000);
+        showToast("Excel 已下载",`已导出 ${task.packages.length} 个人群包快照。`,"success");
+      } catch (error) {
+        showToast("下载失败，请重试","未能生成来源人群包 Excel。","error");
+      }
     }
 
     function showToast(title, copy, type="success") { const el=document.createElement("div");el.className=`toast ${type}`;el.innerHTML=`<div class="toast-icon">${icon(type==="error"?"alert":"check")}</div><div><div class="toast-title">${title}</div><div class="toast-copy">${copy}</div></div>`;document.querySelector("#toastWrap").appendChild(el);setTimeout(()=>{el.style.opacity="0";el.style.transform="translateY(-6px)";setTimeout(()=>el.remove(),200)},2800); }
@@ -1012,12 +1065,15 @@
     document.querySelector("#clearSelection").addEventListener("click",()=>{selectedAudienceIds.clear();renderAudiences();});
     document.querySelector("#openUpload").addEventListener("click",openUploadModal);
     document.querySelectorAll("[data-close-modal]").forEach(el=>el.addEventListener("click",closeUploadModal));
-    document.querySelector("#taskNameInput").addEventListener("input",validateTaskName);
+    document.querySelector("#taskNameInput").addEventListener("input",validateUploadForm);
+    document.querySelector("#brandIdInput").addEventListener("input",validateUploadForm);
+    document.querySelector("#activityIdInput").addEventListener("input",validateUploadForm);
     document.querySelector("#confirmUpload").addEventListener("click",confirmUpload);
     document.querySelector("#taskSearch").addEventListener("input",renderTasks);
     document.querySelector("#taskStatus").addEventListener("change",renderTasks);
     document.querySelector("#resetTasks").addEventListener("click",()=>{document.querySelector("#taskSearch").value="";document.querySelector("#taskStatus").value="all";renderTasks();});
     document.querySelector("#refreshDetail").addEventListener("click",()=>{renderDetail();showToast("状态已刷新","当前展示为任务的最新处理结果。","success");});
+    document.querySelector("#downloadPackagesExcel").addEventListener("click",downloadSourcePackagesExcel);
     document.querySelector("#disabledAudienceTab").addEventListener("click",()=>showToast("原型范围说明","本次仅制作广告采集人群上传 SDH 相关页面。","success"));
     document.querySelector("#openMessages").addEventListener("click",openDrawer);
     document.querySelectorAll("[data-close-drawer]").forEach(el=>el.addEventListener("click",closeDrawer));
