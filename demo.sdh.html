@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DataMax · SDH 人群上传交互原型</title>
+  <style>
+    :root {
+      --page: #f5f7fb;
+      --surface: #ffffff;
+      --surface-soft: #fbfcfe;
+      --text: #1f2937;
+      --muted: #64748b;
+      --subtle: #94a3b8;
+      --primary: #2563c9;
+      --primary-strong: #1d4ea0;
+      --primary-soft: #eaf2ff;
+      --border: #e6eaf0;
+      --border-strong: #d7dee9;
+      --green: #15803d;
+      --green-soft: #ecfdf3;
+      --amber: #b45309;
+      --amber-soft: #fff7ed;
+      --red: #c2413b;
+      --red-soft: #fff1f1;
+      --purple: #7c3aed;
+      --purple-soft: #f4f0ff;
+      --shadow: 0 10px 28px rgba(31, 41, 55, 0.08);
+      --radius: 14px;
+      --sidebar: 238px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; min-height: 100%; }
+
+    body {
+      color: var(--text);
+      background: var(--page);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    button, input, select { font: inherit; }
+    button { color: inherit; }
+    a { color: inherit; text-decoration: none; }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      display: inline-block;
+      flex: 0 0 auto;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .app-shell { min-height: 100vh; }
+
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: var(--sidebar);
+      background: var(--surface-soft);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      z-index: 20;
+    }
+
+    .brand {
+      height: 72px;
+      padding: 0 22px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      color: white;
+      background: var(--primary);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      box-shadow: 0 6px 16px rgba(37, 99, 201, .22);
+    }
+
+    .nav-group { padding: 8px 12px; }
+    .nav-label { padding: 10px 12px 6px; color: var(--subtle); font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+
+    .nav-item {
+      width: 100%;
+      height: 42px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      color: #475569;
+      cursor: pointer;
+      text-align: left;
+      margin: 2px 0;
+    }
+
+    .nav-item:hover { background: #f0f3f8; color: var(--text); }
+    .nav-item.active { background: var(--primary-soft); color: var(--primary-strong); font-weight: 650; }
+    .nav-item.sub { padding-left: 42px; height: 38px; font-size: 13px; }
+    .nav-caret { margin-left: auto; color: var(--subtle); }
+
+    .sidebar-spacer { flex: 1; }
+
+    .account {
+      border-top: 1px solid var(--border);
+      padding: 14px 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #dce7f8;
+      color: var(--primary-strong);
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+    }
+
+    .account-copy { min-width: 0; flex: 1; }
+    .account-name { font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .account-role { color: var(--muted); font-size: 12px; }
+
+    .bell-button {
+      position: relative;
+      border: 0;
+      background: transparent;
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+    }
+    .bell-button:hover { background: #eef2f7; }
+    .badge-count {
+      position: absolute;
+      top: 1px;
+      right: 1px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 8px;
+      background: #dc2626;
+      color: white;
+      font-size: 10px;
+      line-height: 16px;
+      text-align: center;
+      border: 2px solid var(--surface-soft);
+    }
+
+    .main { margin-left: var(--sidebar); min-height: 100vh; }
+
+    .topbar {
+      height: 64px;
+      padding: 0 28px;
+      background: rgba(255,255,255,.94);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 15;
+      backdrop-filter: blur(10px);
+    }
+
+    .workspace-select {
+      height: 38px;
+      min-width: 196px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: white;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .workspace-select .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+    .workspace-select .chevron { margin-left: auto; color: var(--muted); }
+
+    .top-actions { display: flex; align-items: center; gap: 12px; }
+    .quota { color: var(--muted); font-size: 13px; }
+    .quota strong { color: var(--text); }
+
+    .content { padding: 30px 32px 52px; max-width: 1540px; margin: 0 auto; }
+    .page { display: none; }
+    .page.active { display: block; animation: fade .16s ease-out; }
+    @keyframes fade { from { opacity: .35; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+    .page-title { margin: 0; font-size: 30px; letter-spacing: -0.025em; line-height: 1.25; }
+    .page-subtitle { margin: 7px 0 0; color: var(--muted); font-size: 13px; }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+
+    .btn {
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: white;
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: .16s ease;
+    }
+    .btn:hover:not(:disabled) { border-color: #b9c5d5; background: #f9fbfd; transform: translateY(-1px); }
+    .btn.primary { color: white; background: var(--primary); border-color: var(--primary); }
+    .btn.primary:hover:not(:disabled) { background: var(--primary-strong); border-color: var(--primary-strong); }
+    .btn.ghost { border-color: transparent; background: transparent; color: var(--primary); }
+    .btn.text { height: 32px; border: 0; padding: 0 8px; color: var(--primary); background: transparent; }
+    .btn.danger { color: var(--red); border-color: #f3c5c5; background: #fff; }
+    .btn.small { height: 32px; padding: 0 10px; font-size: 12px; border-radius: 8px; }
+    .btn:disabled { cursor: not-allowed; color: #a6b0bd; background: #f3f5f8; border-color: #e7ebf0; transform: none; }
+
+    .tabs {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .tab {
+      height: 46px;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0 3px;
+      font-weight: 600;
+    }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .filter-card { padding: 16px; margin-bottom: 16px; }
+    .filter-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+    .field-wrap { position: relative; min-width: 180px; }
+    .field-wrap.wide { min-width: 270px; }
+    .field-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--subtle); pointer-events: none; }
+    .input, .select {
+      width: 100%;
+      height: 38px;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      background: white;
+      color: var(--text);
+      outline: 0;
+      padding: 0 11px;
+    }
+    .input.has-icon { padding-left: 37px; }
+    .input:focus, .select:focus { border-color: #8eb1e7; box-shadow: 0 0 0 3px rgba(37,99,201,.09); }
+    .filter-spacer { flex: 1; }
+
+    .selection-bar {
+      min-height: 52px;
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid #c9dcf8;
+      background: #f3f7ff;
+      display: none;
+      align-items: center;
+      gap: 12px;
+    }
+    .selection-bar.show { display: flex; }
+    .selection-count { font-weight: 650; color: var(--primary-strong); }
+    .selection-spacer { flex: 1; }
+
+    .table-card { overflow: hidden; }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 980px; }
+    th {
+      height: 46px;
+      padding: 0 14px;
+      background: #fafbfd;
+      color: var(--muted);
+      text-align: left;
+      font-size: 12px;
+      font-weight: 650;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    td { padding: 15px 14px; border-bottom: 1px solid #edf0f4; vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: #fbfcfe; }
+    .check-cell { width: 44px; text-align: center; }
+    input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+    input[type="checkbox"]:disabled { cursor: not-allowed; }
+    .primary-cell { font-weight: 650; color: #263447; }
+    .secondary-line { color: var(--muted); font-size: 12px; margin-top: 3px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .number { font-variant-numeric: tabular-nums; }
+    .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      height: 24px;
+      padding: 0 8px;
+      border-radius: 7px;
+      background: #f1f4f8;
+      color: #526174;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 25px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .status.green { color: var(--green); background: var(--green-soft); }
+    .status.blue { color: var(--primary); background: var(--primary-soft); }
+    .status.amber { color: var(--amber); background: var(--amber-soft); }
+    .status.red { color: var(--red); background: var(--red-soft); }
+    .status.gray { color: #64748b; background: #f1f4f8; }
+    .status.purple { color: var(--purple); background: var(--purple-soft); }
+
+    .actions { display: flex; align-items: center; gap: 2px; white-space: nowrap; }
+    .disabled-note { color: var(--subtle); font-size: 12px; }
+
+    .pagination {
+      min-height: 54px;
+      padding: 8px 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .pager-buttons { display: flex; gap: 6px; }
+    .pager {
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+    }
+    .pager.active { color: white; background: var(--primary); border-color: var(--primary); }
+
+    .crumbs { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+    .crumbs button { border: 0; background: transparent; padding: 0; color: var(--primary); cursor: pointer; }
+
+    .summary-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 12px; margin-bottom: 16px; }
+    .metric { padding: 16px 17px; }
+    .metric-label { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+    .metric-value { font-size: 25px; font-weight: 700; letter-spacing: -0.02em; }
+    .metric-hint { margin-top: 5px; color: var(--subtle); font-size: 11px; }
+
+    .detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+    .stack { display: grid; gap: 16px; }
+    .card-header { padding: 17px 19px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .card-title { font-size: 16px; font-weight: 700; }
+    .card-desc { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .card-body { padding: 18px 19px; }
+
+    .detail-meta { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px; color: var(--muted); font-size: 12px; }
+    .detail-meta strong { color: var(--text); font-weight: 600; }
+
+    .timeline { position: relative; }
+    .timeline-item { position: relative; display: grid; grid-template-columns: 28px 1fr; gap: 12px; padding-bottom: 24px; }
+    .timeline-item:last-child { padding-bottom: 0; }
+    .timeline-item:not(:last-child)::after { content: ""; position: absolute; left: 13px; top: 28px; bottom: 2px; width: 1px; background: var(--border-strong); }
+    .timeline-node { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border-strong); color: var(--subtle); background: white; display: grid; place-items: center; font-size: 12px; font-weight: 700; z-index: 1; }
+    .timeline-item.done .timeline-node { color: white; background: var(--green); border-color: var(--green); }
+    .timeline-item.active .timeline-node { color: white; background: var(--primary); border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-soft); }
+    .timeline-item.failed .timeline-node { color: white; background: var(--red); border-color: var(--red); }
+    .timeline-title { font-weight: 650; margin-top: 2px; }
+    .timeline-copy { color: var(--muted); font-size: 12px; margin-top: 3px; }
+    .timeline-time { color: var(--subtle); font-size: 11px; margin-top: 5px; }
+
+    .notice {
+      display: flex;
+      gap: 10px;
+      padding: 12px 13px;
+      border-radius: 10px;
+      background: #f7f9fc;
+      color: #526174;
+      font-size: 12px;
+    }
+    .notice.blue { background: #f2f7ff; color: var(--primary-strong); }
+    .notice.red { background: var(--red-soft); color: #9f2e2a; }
+    .notice.amber { background: var(--amber-soft); color: #9a4a0c; }
+    .notice .icon { margin-top: 1px; }
+
+    .code-field {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fafbfd;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: #374151;
+      font-size: 12px;
+      word-break: break-all;
+    }
+
+    .info-list { display: grid; gap: 13px; }
+    .info-row { display: grid; grid-template-columns: 112px 1fr; gap: 12px; }
+    .info-label { color: var(--muted); }
+    .info-value { font-weight: 550; min-width: 0; word-break: break-word; }
+    .subtle { color: var(--subtle); }
+
+    .progress { height: 8px; border-radius: 999px; background: #e9eef5; overflow: hidden; margin: 12px 0 6px; }
+    .progress-bar { height: 100%; border-radius: inherit; background: var(--primary); transition: width .35s ease; }
+    .progress-copy { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
+
+    .modal-layer, .drawer-layer { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+    .modal-layer.open, .drawer-layer.open { pointer-events: auto; }
+    .overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, .36); opacity: 0; transition: opacity .18s; }
+    .modal-layer.open .overlay, .drawer-layer.open .overlay { opacity: 1; }
+
+    .modal {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: min(720px, calc(100vw - 40px));
+      max-height: calc(100vh - 64px);
+      transform: translate(-50%, -47%) scale(.985);
+      opacity: 0;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 24px 70px rgba(15, 23, 42, .22);
+      transition: .18s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-layer.open .modal { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .modal-head { padding: 20px 22px 15px; display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 1px solid var(--border); }
+    .modal-title { font-size: 19px; font-weight: 700; }
+    .modal-subtitle { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .icon-button { width: 34px; height: 34px; border: 0; border-radius: 9px; background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--muted); }
+    .icon-button:hover { background: #f1f4f8; color: var(--text); }
+    .modal-body { padding: 18px 22px; overflow-y: auto; }
+    .modal-foot { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+
+    .selected-list { margin: 14px 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .selected-item { display: grid; grid-template-columns: minmax(0, 1fr) 110px 120px 34px; gap: 12px; align-items: center; padding: 12px 13px; border-bottom: 1px solid var(--border); }
+    .selected-item:last-child { border-bottom: 0; }
+    .selected-name { font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .selected-meta { color: var(--muted); font-size: 11px; }
+
+    .drawer {
+      position: absolute;
+      inset: 0 0 0 auto;
+      width: min(440px, 100vw);
+      background: white;
+      transform: translateX(100%);
+      transition: transform .2s ease;
+      box-shadow: -20px 0 50px rgba(15,23,42,.13);
+      display: flex;
+      flex-direction: column;
+    }
+    .drawer-layer.open .drawer { transform: translateX(0); }
+    .drawer-head { padding: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .drawer-title { font-size: 18px; font-weight: 700; }
+    .drawer-unread { color: var(--muted); font-size: 12px; }
+    .drawer-head .icon-button { margin-left: auto; }
+    .drawer-filters { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+    .chip { height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--border); background: white; cursor: pointer; font-size: 12px; }
+    .chip.active { color: var(--primary); border-color: #bcd3f3; background: var(--primary-soft); }
+    .drawer-list { overflow-y: auto; flex: 1; }
+    .message { position: relative; padding: 17px 20px 17px 38px; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .message:hover { background: #fbfcfe; }
+    .message.unread::before { content: ""; position: absolute; left: 20px; top: 25px; width: 7px; height: 7px; border-radius: 50%; background: var(--primary); }
+    .message-title { font-weight: 650; }
+    .message-copy { color: var(--muted); font-size: 12px; margin-top: 5px; }
+    .message-meta { color: var(--subtle); font-size: 11px; margin-top: 8px; display: flex; justify-content: space-between; }
+
+    .toast-wrap { position: fixed; top: 82px; right: 24px; z-index: 100; display: grid; gap: 10px; }
+    .toast { min-width: 280px; max-width: 380px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 11px; background: white; box-shadow: var(--shadow); display: flex; gap: 10px; align-items: flex-start; animation: toast-in .2s ease-out; }
+    .toast.success .toast-icon { color: var(--green); }
+    .toast.error .toast-icon { color: var(--red); }
+    .toast-title { font-weight: 650; }
+    .toast-copy { color: var(--muted); font-size: 12px; margin-top: 1px; }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+    .prototype-launcher {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 40;
+      border: 0;
+      border-radius: 999px;
+      background: #172033;
+      color: white;
+      height: 42px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(15,23,42,.2);
+      font-weight: 650;
+    }
+    .prototype-panel {
+      position: fixed;
+      right: 22px;
+      bottom: 74px;
+      z-index: 39;
+      width: 292px;
+      padding: 14px;
+      background: #172033;
+      color: white;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      box-shadow: 0 18px 48px rgba(15,23,42,.25);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: .16s ease;
+    }
+    .prototype-panel.open { opacity: 1; pointer-events: auto; transform: none; }
+    .prototype-title { font-weight: 700; }
+    .prototype-copy { color: #aeb9ca; font-size: 11px; margin: 3px 0 12px; }
+    .prototype-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .prototype-grid button { min-height: 34px; border-radius: 8px; border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.06); color: white; cursor: pointer; font-size: 12px; }
+    .prototype-grid button:hover { background: rgba(255,255,255,.13); }
+
+    .empty { padding: 58px 20px; text-align: center; color: var(--muted); }
+    .empty-mark { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; margin: 0 auto 12px; color: var(--primary); background: var(--primary-soft); }
+    .empty-title { color: var(--text); font-weight: 650; margin-bottom: 3px; }
+
+    @media (max-width: 1120px) {
+      .summary-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .detail-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 820px) {
+      :root { --sidebar: 74px; }
+      .brand span, .nav-item span, .nav-label, .account-copy, .nav-caret { display: none; }
+      .brand { padding: 0 20px; }
+      .nav-item { justify-content: center; padding: 0; }
+      .nav-item.sub { padding: 0; }
+      .account { justify-content: center; padding: 12px 6px; }
+      .avatar { display: none; }
+      .content { padding: 24px 18px 48px; }
+      .topbar { padding: 0 18px; }
+      .workspace-select { min-width: 0; }
+      .quota { display: none; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute">
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m12 12 8-8"/><path d="m17 7 3 3"/><path d="m15 9 3 3"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1A1.7 1.7 0 0 0 4.6 15 1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M20 16v4H4v-4"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12"/><path d="m18 6-12 12"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 6v6h-6"/><path d="M4 18v-6h6"/><path d="M18.5 9a7 7 0 0 0-11.8-2.5L4 9"/><path d="M5.5 15a7 7 0 0 0 11.8 2.5L20 15"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.7 2.6 17A2 2 0 0 0 4.3 20h15.4a2 2 0 0 0 1.7-3L13.7 3.7a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4L12 3Z"/><path d="m19 15 .7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15Z"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark">D</div><span>DataMax</span></div>
+      <nav class="nav-group">
+        <div class="nav-label">工作台</div>
+        <button class="nav-item"><svg class="icon"><use href="#i-grid"/></svg><span>数据概览</span></button>
+        <button class="nav-item"><svg class="icon"><use href="#i-link"/></svg><span>监测链接</span></button>
+        <button class="nav-item"><svg class="icon"><use href="#i-chart"/></svg><span>数据分析</span></button>
+        <button class="nav-item active" data-nav="audiences"><svg class="icon"><use href="#i-users"/></svg><span>数据应用</span><span class="nav-caret">⌄</span></button>
+        <button class="nav-item sub active" data-nav="audiences"><span>人群列表</span></button>
+        <button class="nav-item sub" data-nav="tasks"><span>SDH 上传记录</span></button>
+        <button class="nav-item"><svg class="icon"><use href="#i-key"/></svg><span>Agent 接入</span></button>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <nav class="nav-group">
+        <button class="nav-item"><svg class="icon"><use href="#i-settings"/></svg><span>工作空间设置</span></button>
+      </nav>
+      <div class="account">
+        <div class="avatar">LR</div>
+        <div class="account-copy"><div class="account-name">luorong</div><div class="account-role">产品协作空间</div></div>
+        <button class="bell-button" id="openMessages" aria-label="打开消息中心">
+          <svg class="icon"><use href="#i-bell"/></svg><span class="badge-count" id="unreadBadge">2</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="workspace-select"><span class="dot"></span><span>品牌营销工作空间</span><span class="chevron">⌄</span></button>
+        <div class="top-actions"><button class="btn small"><svg class="icon"><use href="#i-key"/></svg>接入 Agent</button><span class="quota">监测链接额度 <strong>18 / 30</strong></span></div>
+      </header>
+
+      <div class="content">
+        <section class="page active" id="page-audiences">
+          <div class="page-header">
+            <div><h1 class="page-title">人群列表</h1><p class="page-subtitle">管理广告采集人群及二方平台人群，完成推送与应用。</p></div>
+            <div class="header-actions"><button class="btn" data-nav="tasks"><svg class="icon"><use href="#i-list"/></svg>SDH 上传记录</button><button class="btn primary"><span style="font-size:18px;line-height:1">＋</span>生成人群包</button></div>
+          </div>
+          <div class="tabs"><button class="tab active">广告采集人群</button><button class="tab" id="disabledAudienceTab">数坊人群</button></div>
+          <div class="card filter-card">
+            <div class="filter-row">
+              <div class="field-wrap wide"><svg class="icon field-icon"><use href="#i-search"/></svg><input class="input has-icon" id="audienceSearch" placeholder="搜索人群包名称或系统 ID" /></div>
+              <div class="field-wrap"><select class="select" id="audienceStatus"><option value="all">全部状态</option><option value="available">可用</option><option value="computing">生成中</option><option value="expired">已失效</option></select></div>
+              <div class="field-wrap"><select class="select"><option>全部设备 ID</option><option>IDFA</option><option>OAID</option><option>CAID</option><option>IMEI</option></select></div>
+              <div class="filter-spacer"></div><button class="btn" id="resetAudience">重置</button>
+            </div>
+          </div>
+          <div class="selection-bar" id="selectionBar">
+            <span class="selection-count">已选 <span id="selectedCount">0</span> 项</span><span class="disabled-note">系统将按设备 ID 类型汇总并去重</span>
+            <div class="selection-spacer"></div><button class="btn text" id="clearSelection">清空选择</button><button class="btn primary" id="openUpload"><svg class="icon"><use href="#i-upload"/></svg>上传 SDH</button>
+          </div>
+          <div class="card table-card"><div class="table-scroll"><table>
+            <thead><tr><th class="check-cell"><input type="checkbox" id="selectAllAudiences" aria-label="选择当前页全部可用人群包" /></th><th>人群包</th><th>状态</th><th>可识别人数</th><th>设备 ID</th><th>生成时间</th><th>有效期</th><th>操作</th></tr></thead>
+            <tbody id="audienceRows"></tbody>
+          </table></div><div class="pagination"><span id="audienceTotal">共 0 条</span><div class="pager-buttons"><button class="pager">‹</button><button class="pager active">1</button><button class="pager">2</button><button class="pager">›</button></div></div></div>
+        </section>
+
+        <section class="page" id="page-tasks">
+          <div class="page-header">
+            <div><h1 class="page-title">SDH 上传记录</h1><p class="page-subtitle">查看从广告采集人群到阿里 SDH 建表的完整处理进度。</p></div>
+            <div class="header-actions"><button class="btn primary" data-nav="audiences"><svg class="icon"><use href="#i-users"/></svg>选择人群上传</button></div>
+          </div>
+          <div class="card filter-card"><div class="filter-row">
+            <div class="field-wrap wide"><svg class="icon field-icon"><use href="#i-search"/></svg><input class="input has-icon" id="taskSearch" placeholder="搜索人群包名称、系统 ID 或 SDH 表名" /></div>
+            <div class="field-wrap"><select class="select" id="taskStatus"><option value="all">全部状态</option><option value="processing">处理中</option><option value="ready_upload">待上传 SDH</option><option value="waiting_mapping">等待映射更新</option><option value="completed">已完成</option><option value="failed">失败</option></select></div>
+            <div class="field-wrap"><input class="input" type="date" value="2026-08-20" aria-label="开始日期" /></div><span class="subtle">至</span><div class="field-wrap"><input class="input" type="date" value="2026-09-01" aria-label="结束日期" /></div>
+            <div class="filter-spacer"></div><button class="btn" id="resetTasks">重置</button>
+          </div></div>
+          <div class="card table-card"><div class="table-scroll"><table>
+            <thead><tr><th>来源人群包</th><th>包数量</th><th>去重设备 ID</th><th>新增设备 ID</th><th>状态</th><th>SDH 表名</th><th>创建信息</th><th>更新时间</th><th>操作</th></tr></thead>
+            <tbody id="taskRows"></tbody>
+          </table></div><div class="pagination"><span id="taskTotal">共 0 条</span><div class="pager-buttons"><button class="pager">‹</button><button class="pager active">1</button><button class="pager">›</button></div></div></div>
+        </section>
+
+        <section class="page" id="page-detail">
+          <div class="crumbs"><button data-nav="tasks">SDH 上传记录</button><span>/</span><span>任务详情</span></div>
+          <div class="page-header">
+            <div><div style="display:flex;align-items:center;gap:10px"><h1 class="page-title" id="detailTitle">任务详情</h1><span id="detailStatus"></span></div><div class="detail-meta" id="detailMeta"></div></div>
+            <div class="header-actions" id="detailHeaderActions"></div>
+          </div>
+          <div class="summary-grid" id="summaryGrid"></div>
+          <div class="detail-layout">
+            <div class="stack">
+              <div class="card"><div class="card-header"><div><div class="card-title">处理进度</div><div class="card-desc">页面关闭不会停止后台任务，状态以服务端结果为准。</div></div><button class="btn small" id="refreshDetail"><svg class="icon"><use href="#i-refresh"/></svg>刷新</button></div><div class="card-body"><div class="timeline" id="timeline"></div></div></div>
+              <div class="card"><div class="card-header"><div><div class="card-title">来源人群包</div><div class="card-desc">以下内容为任务创建时固化的不可变快照。</div></div></div><div class="table-scroll"><table style="min-width:720px"><thead><tr><th>人群包</th><th>系统 ID</th><th>快照人数</th><th>设备 ID</th><th>生成时间</th></tr></thead><tbody id="detailPackages"></tbody></table></div></div>
+            </div>
+            <div class="stack"><div class="card" id="incrementCard"></div><div class="card" id="tableCard"></div></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-layer" id="uploadModal" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
+    <div class="overlay" data-close-modal></div><div class="modal"><div class="modal-head"><div><div class="modal-title" id="uploadTitle">上传 SDH</div><div class="modal-subtitle">确认人群范围后，系统将创建一个可持续追踪的上传任务。</div></div><button class="icon-button" data-close-modal aria-label="关闭"><svg class="icon"><use href="#i-x"/></svg></button></div>
+      <div class="modal-body"><div class="notice blue"><svg class="icon"><use href="#i-info"/></svg><div><strong>处理说明</strong><br>所选人群包将按设备 ID 类型合并去重。若存在历史映射中没有的设备 ID，系统会生成 OSS 地址，需你到 SDH 完成一次手工上传。</div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px"><strong>已选人群包（<span id="modalCount">0</span>）</strong><span class="disabled-note">可在提交前移除</span></div><div class="selected-list" id="modalAudienceList"></div><div class="notice"><svg class="icon"><use href="#i-info"/></svg><div>提交后将固化当前人群快照；来源人群后续变化不会影响本任务。多包合并口径为原型评审方案。</div></div></div>
+      <div class="modal-foot"><button class="btn" data-close-modal>取消</button><button class="btn primary" id="confirmUpload"><svg class="icon"><use href="#i-upload"/></svg>确认上传</button></div>
+    </div>
+  </div>
+
+  <div class="drawer-layer" id="messageDrawer"><div class="overlay" data-close-drawer></div><aside class="drawer"><div class="drawer-head"><div><div class="drawer-title">消息中心</div><div class="drawer-unread">还有 <span id="drawerUnread">2</span> 条未读消息</div></div><button class="btn text" id="markAllRead">全部已读</button><button class="icon-button" data-close-drawer aria-label="关闭"><svg class="icon"><use href="#i-x"/></svg></button></div><div class="drawer-filters"><button class="chip active">全部</button><button class="chip">任务</button><button class="chip">推送</button><button class="chip">系统</button></div><div class="drawer-list" id="messageList"></div></aside></div>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+  <button class="prototype-launcher" id="prototypeLauncher"><svg class="icon"><use href="#i-spark"/></svg>原型演示</button>
+  <div class="prototype-panel" id="prototypePanel"><div class="prototype-title">任务状态模拟</div><div class="prototype-copy">仅用于评审交互，不属于正式产品功能。进入任务详情后切换状态。</div><div class="prototype-grid"><button data-sim="ready_upload">待上传 SDH</button><button data-sim="waiting_mapping">映射处理中</button><button data-sim="table_creating">SDH 建表中</button><button data-sim="completed">建表成功</button><button data-sim="failed">模拟失败</button><button data-sim="validating">重新开始</button></div></div>
+
+  <script>
+    const icon = (name) => `<svg class="icon"><use href="#i-${name}"/></svg>`;
+    const fmt = (n) => n == null ? "—" : Number(n).toLocaleString("zh-CN");
+
+    const audiences = [
+      {id:"AUD-20260831-018", name:"七夕活动_高频曝光未点击人群", state:"available", status:"生成成功", count:128430, devices:["OAID","IDFA"], time:"2026-08-31 18:42", expiry:"2026-11-29", available:true},
+      {id:"AUD-20260830-011", name:"新品发布_核心城市兴趣人群", state:"available", status:"生成成功", count:86412, devices:["OAID","CAID"], time:"2026-08-30 15:08", expiry:"2026-11-28", available:true},
+      {id:"AUD-20260828-009", name:"夏季大促_点击未转化人群", state:"available", status:"生成成功", count:214709, devices:["IDFA","OAID","IMEI"], time:"2026-08-28 20:16", expiry:"2026-11-26", available:true},
+      {id:"AUD-20260827-006", name:"品牌焕新_全量触达人群", state:"available", status:"生成成功", count:567830, devices:["OAID"], time:"2026-08-27 13:25", expiry:"2026-11-25", available:true},
+      {id:"AUD-20260826-004", name:"会员日_复访用户", state:"computing", status:"生成中", count:null, devices:["IDFA","OAID"], time:"2026-08-26 11:40", expiry:"—", available:false, reason:"人群仍在生成中"},
+      {id:"AUD-20260518-021", name:"520活动_历史曝光人群", state:"expired", status:"已失效", count:45192, devices:["OAID"], time:"2026-05-18 09:30", expiry:"2026-08-16", available:false, reason:"人群包已失效"}
+    ];
+
+    const stateMap = {
+      validating:{label:"校验中", tone:"blue", group:"processing", stage:0},
+      file_generating:{label:"新增 ID 文件生成中", tone:"blue", group:"processing", stage:1},
+      ready_upload:{label:"待上传 SDH", tone:"amber", group:"ready_upload", stage:1},
+      waiting_mapping:{label:"等待映射更新", tone:"purple", group:"waiting_mapping", stage:2},
+      audience_generating:{label:"人群文件生成中", tone:"blue", group:"processing", stage:3},
+      table_creating:{label:"SDH 表创建中", tone:"blue", group:"processing", stage:4},
+      completed:{label:"已完成", tone:"green", group:"completed", stage:5},
+      failed:{label:"失败", tone:"red", group:"failed", stage:2}
+    };
+
+    let tasks = [
+      {id:"SDH-TASK-20260901-005", packages:[audiences[0],audiences[1]], status:"ready_upload", dedup:203984, newCount:28416, mapped:0, finalRid:null, creator:"luorong", created:"2026-09-01 10:42", updated:"2026-09-01 10:48", oss:"https://oss.example.com/sdh/increment/20260901/005?signature=demo-a8f21", table:null, progress:0},
+      {id:"SDH-TASK-20260831-017", packages:[audiences[2]], status:"waiting_mapping", dedup:214709, newCount:32784, mapped:24588, finalRid:null, creator:"luorong", created:"2026-08-31 16:20", updated:"2026-09-01 09:52", oss:"https://oss.example.com/sdh/increment/20260831/017?signature=expired-demo", table:null, progress:75},
+      {id:"SDH-TASK-20260830-012", packages:[audiences[3]], status:"completed", dedup:567830, newCount:0, mapped:0, finalRid:541208, creator:"Chen Yu", created:"2026-08-30 14:05", updated:"2026-08-30 14:21", table:"dm_brand_refresh_20260830_012", requestId:"ALI-SDH-982731", progress:100},
+      {id:"SDH-TASK-20260829-009", packages:[audiences[1]], status:"failed", dedup:86412, newCount:9730, mapped:6812, finalRid:null, creator:"Mia", created:"2026-08-29 17:10", updated:"2026-08-30 08:34", oss:"https://oss.example.com/sdh/increment/20260829/009?signature=demo", table:null, progress:70, error:"映射结果校验未通过：仍有 2,918 个设备 ID 未取得有效 RID。", errorStage:"映射更新"},
+      {id:"SDH-TASK-20260828-006", packages:[audiences[0],audiences[2],audiences[3]], status:"table_creating", dedup:823905, newCount:71208, mapped:71208, finalRid:795362, creator:"luorong", created:"2026-08-28 12:10", updated:"2026-09-01 10:31", table:null, requestId:"ALI-SDH-981422", progress:100}
+    ];
+
+    let selectedAudienceIds = new Set();
+    let detailTaskId = tasks[0].id;
+    let messages = [
+      {id:1, taskId:tasks[2].id, unread:true, type:"任务", title:"SDH 人群表创建成功", copy:`表名 ${tasks[2].table}，可前往 SDH 完成授权。`, time:"08-30 14:21"},
+      {id:2, taskId:tasks[3].id, unread:true, type:"任务", title:"SDH 人群上传任务失败", copy:"映射更新阶段失败，请查看详情并重新检测。", time:"08-30 08:34"},
+      {id:3, taskId:null, unread:false, type:"系统", title:"平台维护通知", copy:"数据应用服务将于本周日 02:00 进行例行维护。", time:"08-28 18:00"}
+    ];
+
+    const statusTag = (status) => { const s = stateMap[status]; return `<span class="status ${s.tone}">${s.label}</span>`; };
+
+    function renderAudiences() {
+      const keyword = document.querySelector("#audienceSearch").value.trim().toLowerCase();
+      const filter = document.querySelector("#audienceStatus").value;
+      const filtered = audiences.filter(a => (!keyword || `${a.name}${a.id}`.toLowerCase().includes(keyword)) && (filter === "all" || a.state === filter));
+      document.querySelector("#audienceRows").innerHTML = filtered.length ? filtered.map(a => `
+        <tr>
+          <td class="check-cell"><input type="checkbox" class="audience-check" value="${a.id}" ${selectedAudienceIds.has(a.id)?"checked":""} ${a.available?"":`disabled title="${a.reason}"`} aria-label="选择${a.name}" /></td>
+          <td><div class="primary-cell">${a.name}</div><div class="secondary-line">${a.id}</div></td>
+          <td><span class="status ${a.state==="available"?"green":a.state==="computing"?"blue":"gray"}">${a.status}</span></td>
+          <td class="number">${fmt(a.count)}</td><td><div class="tags">${a.devices.map(d=>`<span class="tag">${d}</span>`).join("")}</div></td>
+          <td>${a.time}</td><td>${a.expiry}</td>
+          <td><div class="actions"><button class="btn text">创建推送任务</button><button class="btn text">查看详情</button></div>${a.available?"":`<div class="disabled-note">${a.reason}</div>`}</td>
+        </tr>`).join("") : `<tr><td colspan="8"><div class="empty"><div class="empty-mark">${icon("search")}</div><div class="empty-title">未找到匹配的人群包</div><div>请调整搜索词或筛选条件。</div></div></td></tr>`;
+      document.querySelector("#audienceTotal").textContent = `共 ${filtered.length} 条`;
+      document.querySelectorAll(".audience-check").forEach(el => el.addEventListener("change", e => { e.target.checked ? selectedAudienceIds.add(e.target.value) : selectedAudienceIds.delete(e.target.value); updateSelection(); }));
+      updateSelection();
+    }
+
+    function updateSelection() {
+      document.querySelector("#selectedCount").textContent = selectedAudienceIds.size;
+      document.querySelector("#selectionBar").classList.toggle("show", selectedAudienceIds.size > 0);
+      const visibleAvailable = [...document.querySelectorAll(".audience-check:not(:disabled)")];
+      const allChecked = visibleAvailable.length > 0 && visibleAvailable.every(el => selectedAudienceIds.has(el.value));
+      document.querySelector("#selectAllAudiences").checked = allChecked;
+      document.querySelector("#selectAllAudiences").indeterminate = !allChecked && visibleAvailable.some(el => selectedAudienceIds.has(el.value));
+    }
+
+    function renderTasks() {
+      const keyword = document.querySelector("#taskSearch").value.trim().toLowerCase();
+      const filter = document.querySelector("#taskStatus").value;
+      const filtered = tasks.filter(t => {
+        const hay = `${t.id} ${t.table||""} ${t.packages.map(p=>`${p.name} ${p.id}`).join(" ")}`.toLowerCase();
+        return (!keyword || hay.includes(keyword)) && (filter === "all" || stateMap[t.status].group === filter);
+      });
+      document.querySelector("#taskRows").innerHTML = filtered.length ? filtered.map(t => `
+        <tr><td><div class="primary-cell">${t.packages[0].name}${t.packages.length>1?` <span class="subtle">等 ${t.packages.length} 个</span>`:""}</div><div class="secondary-line">${t.id}</div></td>
+        <td>${t.packages.length}</td><td class="number">${fmt(t.dedup)}</td><td class="number">${fmt(t.newCount)}</td><td>${statusTag(t.status)}</td>
+        <td>${t.table?`<button class="btn text copy-table" data-copy="${t.table}">${t.table} ${icon("copy")}</button>`:"—"}</td>
+        <td><div>${t.creator}</div><div class="disabled-note">${t.created}</div></td><td>${t.updated}</td>
+        <td><div class="actions"><button class="btn text view-task" data-id="${t.id}">查看详情</button>${t.status==="ready_upload"?`<button class="btn text copy-oss" data-copy="${t.oss}">复制 OSS 地址</button>`:""}${t.status==="failed"?`<button class="btn text retry-task" data-id="${t.id}">重新检测</button>`:""}</div></td></tr>`).join("") : `<tr><td colspan="9"><div class="empty"><div class="empty-mark">${icon("database")}</div><div class="empty-title">暂无 SDH 上传任务</div><div>返回广告采集人群，选择人群包后发起上传。</div></div></td></tr>`;
+      document.querySelector("#taskTotal").textContent = `共 ${filtered.length} 条`;
+      document.querySelectorAll(".view-task").forEach(b => b.addEventListener("click", () => openTask(b.dataset.id)));
+      document.querySelectorAll(".copy-table,.copy-oss").forEach(b => b.addEventListener("click", () => copyText(b.dataset.copy, b.classList.contains("copy-table")?"表名已复制":"OSS 地址已复制")));
+      document.querySelectorAll(".retry-task").forEach(b => b.addEventListener("click", () => retryTask(b.dataset.id)));
+    }
+
+    const stages = [
+      {name:"任务校验", copy:"固化来源快照，校验并去重设备 ID。"},
+      {name:"新增 ID 文件", copy:"比对历史映射；存在新增 ID 时生成 OSS 文件。"},
+      {name:"映射更新", copy:"监测任务批次并校验全部新增 ID 的 RID 映射。"},
+      {name:"完整人群文件", copy:"合并历史与新增映射，按 RID 去重并生成最终文件。"},
+      {name:"SDH 建表", copy:"调用 SDH 接口并确认表达到可授权状态。"}
+    ];
+
+    function stageState(task, index) {
+      const current = stateMap[task.status].stage;
+      if (task.status === "completed") return "done";
+      if (task.status === "failed") return index < current ? "done" : index === current ? "failed" : "pending";
+      if (index < current || (task.status === "ready_upload" && index === 1)) return "done";
+      if (index === current) return "active";
+      return "pending";
+    }
+
+    function renderDetail() {
+      const t = tasks.find(x=>x.id===detailTaskId) || tasks[0];
+      detailTaskId = t.id;
+      document.querySelector("#detailTitle").textContent = t.packages.length === 1 ? t.packages[0].name : `${t.packages[0].name} 等 ${t.packages.length} 个`;
+      document.querySelector("#detailStatus").innerHTML = statusTag(t.status);
+      document.querySelector("#detailMeta").innerHTML = `<span>任务 ID：<strong>${t.id}</strong></span><span>创建人：<strong>${t.creator}</strong></span><span>创建时间：<strong>${t.created}</strong></span><span>最近更新：<strong>${t.updated}</strong></span>`;
+      let headerActions = `<button class="btn" data-nav="tasks">返回列表</button>`;
+      if (t.status === "ready_upload") headerActions += `<button class="btn primary" id="headerCopyOss">${icon("copy")}复制 OSS 地址</button>`;
+      if (t.status === "completed") headerActions += `<button class="btn primary" id="headerCopyTable">${icon("copy")}复制表名</button>`;
+      if (t.status === "failed") headerActions += `<button class="btn primary" id="headerRetry">${icon("refresh")}重新检测</button>`;
+      document.querySelector("#detailHeaderActions").innerHTML = headerActions;
+      bindNav();
+      document.querySelector("#headerCopyOss")?.addEventListener("click",()=>copyText(t.oss,"OSS 地址已复制"));
+      document.querySelector("#headerCopyTable")?.addEventListener("click",()=>copyText(t.table,"表名已复制"));
+      document.querySelector("#headerRetry")?.addEventListener("click",()=>retryTask(t.id));
+
+      const metrics = [
+        ["来源人群包", t.packages.length, "任务创建时快照"],
+        ["去重设备 ID", fmt(t.dedup), "按类型 + 标准化值去重"],
+        ["已有映射", fmt(t.dedup != null && t.newCount != null ? t.dedup-t.newCount : null), "历史有效 RID"],
+        ["新增设备 ID", fmt(t.newCount), t.newCount===0?"无需人工上传":"需要阿里映射"],
+        ["最终 RID", fmt(t.finalRid), t.status==="completed"?"已按 RID 去重":"处理完成后展示"]
+      ];
+      document.querySelector("#summaryGrid").innerHTML = metrics.map(m=>`<div class="card metric"><div class="metric-label">${m[0]}</div><div class="metric-value">${m[1]}</div><div class="metric-hint">${m[2]}</div></div>`).join("");
+
+      document.querySelector("#timeline").innerHTML = stages.map((s,i)=>{ const state=stageState(t,i); let copy=s.copy; let time=""; if(state==="done") time="已完成"; if(state==="active") time=t.status==="ready_upload"?"OSS 地址已就绪，等待你到 SDH 上传":"正在后台处理…"; if(state==="failed") {copy=t.error||"处理失败，请查看右侧说明。";time=`失败阶段：${t.errorStage||s.name}`;} return `<div class="timeline-item ${state}"><div class="timeline-node">${state==="done"?"✓":state==="failed"?"!":i+1}</div><div><div class="timeline-title">${s.name}</div><div class="timeline-copy">${copy}</div>${time?`<div class="timeline-time">${time}</div>`:""}</div></div>`; }).join("");
+
+      document.querySelector("#detailPackages").innerHTML = t.packages.map(p=>`<tr><td class="primary-cell">${p.name}</td><td class="secondary-line">${p.id}</td><td>${fmt(p.count)}</td><td><div class="tags">${p.devices.map(d=>`<span class="tag">${d}</span>`).join("")}</div></td><td>${p.time}</td></tr>`).join("");
+
+      const incrementCard = document.querySelector("#incrementCard");
+      if (t.newCount === 0) {
+        incrementCard.innerHTML = `<div class="card-header"><div><div class="card-title">新增 ID 文件</div><div class="card-desc">本任务无需人工上传。</div></div>${statusTag("completed")}</div><div class="card-body"><div class="notice blue">${icon("check")}<div><strong>已自动跳过</strong><br>全部设备 ID 均存在有效 RID 映射，系统已直接生成完整人群文件。</div></div></div>`;
+      } else if (["ready_upload","waiting_mapping","audience_generating","table_creating","completed","failed"].includes(t.status)) {
+        const expired = t.status === "waiting_mapping" && t.oss?.includes("expired");
+        incrementCard.innerHTML = `<div class="card-header"><div><div class="card-title">新增 ID 文件</div><div class="card-desc">${fmt(t.newCount)} 个新增设备 ID</div></div>${t.status==="ready_upload"?statusTag("ready_upload"):t.status==="failed"?statusTag("failed"):statusTag("completed")}</div><div class="card-body">
+          ${t.status==="failed"?`<div class="notice red">${icon("alert")}<div><strong>${t.errorStage||"处理"}失败</strong><br>${t.error}</div></div>`:t.status==="ready_upload"?`<div class="notice amber">${icon("info")}<div><strong>下一步由运营完成</strong><br>复制下面地址，到阿里 SDH 上传后等待系统自动检测映射结果。</div></div>`:`<div class="notice blue">${icon("check")}<div><strong>文件已生成</strong><br>系统正在使用同一任务批次监测映射结果。</div></div>`}
+          <div class="code-field">${expired?"地址已失效，请刷新签名地址":(t.oss||"内部文件已生成，前端地址不再需要展示")}</div>
+          <div style="display:flex;gap:8px;margin-top:12px">${t.oss?`<button class="btn primary small" id="copyOss" ${expired?"disabled":""}>${icon("copy")}复制 OSS 地址</button><button class="btn small" id="renewOss">${icon("refresh")}刷新地址</button>`:""}</div>
+          ${t.status==="waiting_mapping"||t.status==="failed"?`<div class="progress"><div class="progress-bar" style="width:${t.progress||0}%"></div></div><div class="progress-copy"><span>已映射 ${fmt(t.mapped)} / ${fmt(t.newCount)}</span><span>${t.progress||0}%</span></div>`:""}
+        </div>`;
+        document.querySelector("#copyOss")?.addEventListener("click",()=>copyText(t.oss,"OSS 地址已复制"));
+        document.querySelector("#renewOss")?.addEventListener("click",()=>renewOss(t));
+      } else {
+        incrementCard.innerHTML = `<div class="card-header"><div><div class="card-title">新增 ID 文件</div><div class="card-desc">增量判断完成后展示。</div></div></div><div class="card-body"><div class="notice">${icon("clock")}<div>系统正在校验来源快照和历史映射，请稍候。</div></div></div>`;
+      }
+
+      const tableCard = document.querySelector("#tableCard");
+      if (t.status === "completed") {
+        tableCard.innerHTML = `<div class="card-header"><div><div class="card-title">SDH 表信息</div><div class="card-desc">表已达到可用于后续授权的状态。</div></div>${statusTag("completed")}</div><div class="card-body"><div class="info-list"><div class="info-row"><div class="info-label">表名</div><div class="info-value">${t.table}</div></div><div class="info-row"><div class="info-label">平台请求 ID</div><div class="info-value">${t.requestId||"—"}</div></div><div class="info-row"><div class="info-label">完成时间</div><div class="info-value">${t.updated}</div></div></div><button class="btn primary" id="copyTable" style="width:100%;margin-top:16px">${icon("copy")}复制表名</button><div class="notice" style="margin-top:12px">${icon("info")}<div>下一步请到 SDH 完成表授权。本期不支持在 DM 内授权或创建计算任务。</div></div></div>`;
+        document.querySelector("#copyTable").addEventListener("click",()=>copyText(t.table,"表名已复制"));
+      } else if (t.status === "table_creating") {
+        tableCard.innerHTML = `<div class="card-header"><div><div class="card-title">SDH 表信息</div><div class="card-desc">正在确认建表结果。</div></div>${statusTag("table_creating")}</div><div class="card-body"><div class="info-row"><div class="info-label">平台请求 ID</div><div class="info-value">${t.requestId||"等待返回"}</div></div><div class="notice blue" style="margin-top:14px">${icon("clock")}<div>接口已受理，系统会先查询原请求结果再决定是否重试，避免生成重复表。</div></div></div>`;
+      } else {
+        tableCard.innerHTML = `<div class="card-header"><div><div class="card-title">SDH 表信息</div><div class="card-desc">完成映射与人群文件后自动创建。</div></div></div><div class="card-body"><div class="empty" style="padding:20px 10px"><div class="empty-mark">${icon("database")}</div><div class="empty-title">尚未创建 SDH 表</div><div>当前阶段完成后，系统将自动继续处理。</div></div></div>`;
+      }
+    }
+
+    function showPage(name) {
+      document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+      document.querySelector(`#page-${name}`).classList.add("active");
+      document.querySelectorAll("[data-nav]").forEach(n=>n.classList.toggle("active", n.dataset.nav === name || (name==="detail" && n.dataset.nav==="tasks")));
+      if (name === "tasks") renderTasks();
+      if (name === "audiences") renderAudiences();
+      if (name === "detail") renderDetail();
+      window.scrollTo({top:0,behavior:"smooth"});
+    }
+
+    function bindNav() { document.querySelectorAll("[data-nav]").forEach(el => { el.onclick = () => showPage(el.dataset.nav); }); }
+    function openTask(id) { detailTaskId = id; showPage("detail"); }
+
+    function openUploadModal() {
+      if (!selectedAudienceIds.size) return;
+      renderModalSelection();
+      document.querySelector("#uploadModal").classList.add("open");
+      document.body.style.overflow = "hidden";
+    }
+    function closeUploadModal() { document.querySelector("#uploadModal").classList.remove("open"); document.body.style.overflow = ""; }
+    function renderModalSelection() {
+      const selected = audiences.filter(a=>selectedAudienceIds.has(a.id));
+      document.querySelector("#modalCount").textContent = selected.length;
+      document.querySelector("#modalAudienceList").innerHTML = selected.length ? selected.map(a=>`<div class="selected-item"><div><div class="selected-name">${a.name}</div><div class="selected-meta">${a.id}</div></div><div class="number">${fmt(a.count)} 人</div><div class="tags">${a.devices.slice(0,2).map(d=>`<span class="tag">${d}</span>`).join("")}</div><button class="icon-button remove-modal-item" data-id="${a.id}" aria-label="移除${a.name}">${icon("x")}</button></div>`).join("") : `<div class="empty" style="padding:28px">请至少保留一个人群包</div>`;
+      document.querySelector("#confirmUpload").disabled = selected.length === 0;
+      document.querySelectorAll(".remove-modal-item").forEach(b=>b.addEventListener("click",()=>{ selectedAudienceIds.delete(b.dataset.id); renderModalSelection(); renderAudiences(); }));
+    }
+
+    function confirmUpload() {
+      const btn = document.querySelector("#confirmUpload");
+      const selected = audiences.filter(a=>selectedAudienceIds.has(a.id));
+      if (!selected.length) return;
+      btn.disabled = true; btn.innerHTML = `${icon("refresh")}正在创建任务…`;
+      setTimeout(()=>{
+        const serial = String(tasks.length + 6).padStart(3,"0");
+        const total = selected.reduce((sum,a)=>sum+(a.count||0),0);
+        const dedup = Math.round(total * (selected.length > 1 ? 0.92 : 1));
+        const created = {id:`SDH-TASK-20260901-${serial}`, packages:selected, status:"validating", dedup, newCount:null, mapped:0, finalRid:null, creator:"luorong", created:"2026-09-01 11:26", updated:"2026-09-01 11:26", oss:null, table:null, progress:0};
+        tasks.unshift(created); detailTaskId=created.id; selectedAudienceIds.clear(); closeUploadModal(); btn.disabled=false; btn.innerHTML=`${icon("upload")}确认上传`; renderAudiences(); showToast("任务创建成功","系统正在校验人群快照与历史映射。","success"); showPage("detail");
+        setTimeout(()=>{ const t=tasks.find(x=>x.id===created.id); if(t&&t.status==="validating"){t.status="file_generating";t.newCount=Math.max(1,Math.round(t.dedup*.14));t.updated="2026-09-01 11:27";renderDetail();} },1000);
+        setTimeout(()=>{ const t=tasks.find(x=>x.id===created.id); if(t&&t.status==="file_generating"){t.status="ready_upload";t.oss=`https://oss.example.com/sdh/increment/20260901/${serial}?signature=demo-new`;t.updated="2026-09-01 11:28";renderDetail();showToast("新增 ID 文件已就绪","可复制 OSS 地址并前往 SDH 上传。","success");} },2300);
+      },700);
+    }
+
+    function retryTask(id) { const t=tasks.find(x=>x.id===id); if(!t)return; t.status="waiting_mapping"; t.error=null; t.errorStage=null; t.updated="2026-09-01 11:30"; t.progress=Math.max(t.progress||0,70); detailTaskId=id; renderTasks(); if(document.querySelector("#page-detail").classList.contains("active"))renderDetail(); showToast("已重新开始检测","系统将复用原任务批次，不会创建重复表。","success"); }
+    function renewOss(t) { t.oss=`https://oss.example.com/sdh/increment/renewed/${t.id}?signature=${Date.now().toString(36)}`; renderDetail(); showToast("地址已刷新","业务文件未改变，仅更新访问签名。","success"); }
+
+    async function copyText(text, title) {
+      if (!text) return;
+      try { await navigator.clipboard.writeText(text); }
+      catch { const area=document.createElement("textarea");area.value=text;area.style.position="fixed";area.style.opacity="0";document.body.appendChild(area);area.select();document.execCommand("copy");area.remove(); }
+      showToast(title,"已复制到剪贴板。","success");
+    }
+
+    function showToast(title, copy, type="success") { const el=document.createElement("div");el.className=`toast ${type}`;el.innerHTML=`<div class="toast-icon">${icon(type==="error"?"alert":"check")}</div><div><div class="toast-title">${title}</div><div class="toast-copy">${copy}</div></div>`;document.querySelector("#toastWrap").appendChild(el);setTimeout(()=>{el.style.opacity="0";el.style.transform="translateY(-6px)";setTimeout(()=>el.remove(),200)},2800); }
+
+    function renderMessages() {
+      document.querySelector("#messageList").innerHTML = messages.map(m=>`<div class="message ${m.unread?"unread":""}" data-message="${m.id}"><div class="message-title">${m.title}</div><div class="message-copy">${m.copy}</div><div class="message-meta"><span>${m.type} · 品牌营销工作空间</span><span>${m.time}</span></div></div>`).join("");
+      const unread=messages.filter(m=>m.unread).length;document.querySelector("#drawerUnread").textContent=unread;document.querySelector("#unreadBadge").textContent=unread;document.querySelector("#unreadBadge").style.display=unread?"":"none";
+      document.querySelectorAll("[data-message]").forEach(el=>el.addEventListener("click",()=>{const m=messages.find(x=>x.id==el.dataset.message);m.unread=false;renderMessages();closeDrawer();if(m.taskId)openTask(m.taskId);else showToast("系统消息","该消息没有关联业务详情。","success");}));
+    }
+    function openDrawer(){renderMessages();document.querySelector("#messageDrawer").classList.add("open");document.body.style.overflow="hidden";}
+    function closeDrawer(){document.querySelector("#messageDrawer").classList.remove("open");document.body.style.overflow="";}
+
+    function simulate(status) {
+      const detailVisible=document.querySelector("#page-detail").classList.contains("active");
+      if(!detailVisible){openTask(detailTaskId);showToast("已打开任务详情","现在可以切换状态查看各阶段界面。","success");}
+      const t=tasks.find(x=>x.id===detailTaskId); if(!t)return;
+      t.status=status;t.updated="2026-09-01 11:36";
+      if(status==="ready_upload"){t.newCount=t.newCount??28416;t.mapped=0;t.progress=0;t.oss=t.oss||"https://oss.example.com/sdh/increment/demo?signature=interactive";t.error=null;t.table=null;}
+      if(status==="waiting_mapping"){t.newCount=t.newCount??28416;t.mapped=Math.round(t.newCount*.68);t.progress=68;t.oss=t.oss||"https://oss.example.com/sdh/increment/demo?signature=interactive";t.error=null;t.table=null;}
+      if(status==="table_creating"){t.newCount=t.newCount??28416;t.mapped=t.newCount;t.progress=100;t.finalRid=Math.round((t.dedup||203984)*.96);t.requestId="ALI-SDH-DEMO-2026";t.error=null;t.table=null;}
+      if(status==="completed"){t.newCount=t.newCount??28416;t.mapped=t.newCount;t.progress=100;t.finalRid=t.finalRid||Math.round((t.dedup||203984)*.96);t.table=`dm_audience_${t.id.slice(-8).replaceAll("-","").toLowerCase()}`;t.requestId=t.requestId||"ALI-SDH-DEMO-2026";t.error=null;}
+      if(status==="failed"){t.newCount=t.newCount??28416;t.mapped=Math.round(t.newCount*.72);t.progress=72;t.error="映射结果校验未通过：仍有部分设备 ID 未取得有效 RID。";t.errorStage="映射更新";t.table=null;}
+      if(status==="validating"){t.newCount=null;t.mapped=0;t.progress=0;t.finalRid=null;t.table=null;t.error=null;t.requestId=null;}
+      renderDetail();renderTasks();showToast("原型状态已切换",stateMap[status].label,"success");
+    }
+
+    bindNav(); renderAudiences(); renderTasks(); renderMessages();
+    document.querySelector("#audienceSearch").addEventListener("input",renderAudiences);
+    document.querySelector("#audienceStatus").addEventListener("change",renderAudiences);
+    document.querySelector("#resetAudience").addEventListener("click",()=>{document.querySelector("#audienceSearch").value="";document.querySelector("#audienceStatus").value="all";renderAudiences();});
+    document.querySelector("#selectAllAudiences").addEventListener("change",e=>{document.querySelectorAll(".audience-check:not(:disabled)").forEach(c=>e.target.checked?selectedAudienceIds.add(c.value):selectedAudienceIds.delete(c.value));renderAudiences();});
+    document.querySelector("#clearSelection").addEventListener("click",()=>{selectedAudienceIds.clear();renderAudiences();});
+    document.querySelector("#openUpload").addEventListener("click",openUploadModal);
+    document.querySelectorAll("[data-close-modal]").forEach(el=>el.addEventListener("click",closeUploadModal));
+    document.querySelector("#confirmUpload").addEventListener("click",confirmUpload);
+    document.querySelector("#taskSearch").addEventListener("input",renderTasks);
+    document.querySelector("#taskStatus").addEventListener("change",renderTasks);
+    document.querySelector("#resetTasks").addEventListener("click",()=>{document.querySelector("#taskSearch").value="";document.querySelector("#taskStatus").value="all";renderTasks();});
+    document.querySelector("#refreshDetail").addEventListener("click",()=>{renderDetail();showToast("状态已刷新","当前展示为任务的最新处理结果。","success");});
+    document.querySelector("#disabledAudienceTab").addEventListener("click",()=>showToast("原型范围说明","本次仅制作广告采集人群上传 SDH 相关页面。","success"));
+    document.querySelector("#openMessages").addEventListener("click",openDrawer);
+    document.querySelectorAll("[data-close-drawer]").forEach(el=>el.addEventListener("click",closeDrawer));
+    document.querySelector("#markAllRead").addEventListener("click",()=>{messages.forEach(m=>m.unread=false);renderMessages();showToast("已全部标记为已读","账号下全部消息已更新。","success");});
+    document.querySelectorAll(".chip").forEach(chip=>chip.addEventListener("click",()=>{document.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));chip.classList.add("active");}));
+    document.querySelector("#prototypeLauncher").addEventListener("click",()=>document.querySelector("#prototypePanel").classList.toggle("open"));
+    document.querySelectorAll("[data-sim]").forEach(b=>b.addEventListener("click",()=>simulate(b.dataset.sim)));
+    document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeUploadModal();closeDrawer();document.querySelector("#prototypePanel").classList.remove("open");}});
+  </script>
+</body>
+</html>
