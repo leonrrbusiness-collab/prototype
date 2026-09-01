@@ -293,6 +293,13 @@
     .input:focus, .select:focus { border-color: #8eb1e7; box-shadow: 0 0 0 3px rgba(37,99,201,.09); }
     .filter-spacer { flex: 1; }
 
+    .form-field { margin-bottom: 16px; }
+    .form-label { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; font-weight: 650; }
+    .required { color: var(--red); }
+    .field-help { margin-top: 5px; color: var(--muted); font-size: 11px; }
+    .field-error { margin-top: 5px; color: var(--red); font-size: 11px; display: none; }
+    .field-error.show { display: block; }
+
     .selection-bar {
       min-height: 52px;
       margin-bottom: 12px;
@@ -364,6 +371,10 @@
 
     .actions { display: flex; align-items: center; gap: 2px; white-space: nowrap; }
     .disabled-note { color: var(--subtle); font-size: 12px; }
+    .table-name-col, .table-name-cell { width: 190px; max-width: 190px; }
+    .table-name-copy { width: 100%; max-width: 100%; justify-content: flex-start; }
+    .table-name-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .table-name-copy .icon { flex: 0 0 auto; }
 
     .pagination {
       min-height: 54px;
@@ -442,6 +453,13 @@
       font-size: 12px;
       word-break: break-all;
     }
+
+    .address-block { padding: 13px; border: 1px solid var(--border); border-radius: 11px; background: #fafbfd; }
+    .address-block + .address-block { margin-top: 10px; }
+    .address-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
+    .address-title { font-weight: 650; font-size: 12px; }
+    .address-purpose { color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .address-value { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; color: #374151; word-break: break-all; line-height: 1.6; }
 
     .info-list { display: grid; gap: 13px; }
     .info-row { display: grid; grid-template-columns: 112px 1fr; gap: 12px; }
@@ -676,13 +694,13 @@
             <div class="header-actions"><button class="btn primary" data-nav="audiences"><svg class="icon"><use href="#i-users"/></svg>选择人群上传</button></div>
           </div>
           <div class="card filter-card"><div class="filter-row">
-            <div class="field-wrap wide"><svg class="icon field-icon"><use href="#i-search"/></svg><input class="input has-icon" id="taskSearch" placeholder="搜索人群包名称、系统 ID 或 SDH 表名" /></div>
+            <div class="field-wrap wide"><svg class="icon field-icon"><use href="#i-search"/></svg><input class="input has-icon" id="taskSearch" placeholder="搜索任务名称、人群包、系统 ID 或表名" /></div>
             <div class="field-wrap"><select class="select" id="taskStatus"><option value="all">全部状态</option><option value="processing">处理中</option><option value="ready_upload">待上传 SDH</option><option value="waiting_mapping">等待映射更新</option><option value="completed">已完成</option><option value="failed">失败</option></select></div>
             <div class="field-wrap"><input class="input" type="date" value="2026-08-20" aria-label="开始日期" /></div><span class="subtle">至</span><div class="field-wrap"><input class="input" type="date" value="2026-09-01" aria-label="结束日期" /></div>
             <div class="filter-spacer"></div><button class="btn" id="resetTasks">重置</button>
           </div></div>
           <div class="card table-card"><div class="table-scroll"><table>
-            <thead><tr><th>来源人群包</th><th>包数量</th><th>去重设备 ID</th><th>新增设备 ID</th><th>状态</th><th>SDH 表名</th><th>创建信息</th><th>更新时间</th><th>操作</th></tr></thead>
+            <thead><tr><th>任务名称</th><th>来源人群包</th><th>包数量</th><th>去重设备 ID</th><th>新增设备 ID</th><th>状态</th><th class="table-name-col">SDH 表名</th><th>创建人</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
             <tbody id="taskRows"></tbody>
           </table></div><div class="pagination"><span id="taskTotal">共 0 条</span><div class="pager-buttons"><button class="pager">‹</button><button class="pager active">1</button><button class="pager">›</button></div></div></div>
         </section>
@@ -708,7 +726,12 @@
 
   <div class="modal-layer" id="uploadModal" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
     <div class="overlay" data-close-modal></div><div class="modal"><div class="modal-head"><div><div class="modal-title" id="uploadTitle">上传 SDH</div><div class="modal-subtitle">确认人群范围后，系统将创建一个可持续追踪的上传任务。</div></div><button class="icon-button" data-close-modal aria-label="关闭"><svg class="icon"><use href="#i-x"/></svg></button></div>
-      <div class="modal-body"><div class="notice blue"><svg class="icon"><use href="#i-info"/></svg><div><strong>处理说明</strong><br>所选人群包将按设备 ID 类型合并去重。若存在历史映射中没有的设备 ID，系统会生成 OSS 地址，需你到 SDH 完成一次手工上传。</div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px"><strong>已选人群包（<span id="modalCount">0</span>）</strong><span class="disabled-note">可在提交前移除</span></div><div class="selected-list" id="modalAudienceList"></div><div class="notice"><svg class="icon"><use href="#i-info"/></svg><div>提交后将固化当前人群快照；来源人群后续变化不会影响本任务。多包合并口径为原型评审方案。</div></div></div>
+      <div class="modal-body">
+        <div class="form-field"><label class="form-label" for="taskNameInput">任务名称 <span class="required">*</span></label><input class="input" id="taskNameInput" maxlength="50" placeholder="请输入任务名称" /><div class="field-help"><span id="taskNameCount">0</span>/50；多个人群包将合并去重后创建一张表</div><div class="field-error" id="taskNameError">请输入 1—50 个字符的任务名称</div></div>
+        <div class="notice blue"><svg class="icon"><use href="#i-info"/></svg><div><strong>处理说明</strong><br>支持 IMEI、IDFA、OAID、CAID；CAID 使用原值，其他类型使用 MD5。频次 ≥ 10,000 的 ID 和不支持类型将被过滤。若存在新增 ID，需将系统生成的输入、输出两个 OSS 地址都填写到 SDH。</div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px"><strong>已选人群包（<span id="modalCount">0</span>）</strong><span class="disabled-note">可在提交前移除</span></div><div class="selected-list" id="modalAudienceList"></div><div id="modalFilterNotice"></div>
+        <div class="notice"><svg class="icon"><use href="#i-info"/></svg><div>提交后将固化当前人群快照；90 天有效期为阻断条件。多个人群包合并去重后只创建一个任务、一份最终人群包和一张表。</div></div>
+      </div>
       <div class="modal-foot"><button class="btn" data-close-modal>取消</button><button class="btn primary" id="confirmUpload"><svg class="icon"><use href="#i-upload"/></svg>确认上传</button></div>
     </div>
   </div>
@@ -725,11 +748,11 @@
 
     const audiences = [
       {id:"AUD-20260831-018", name:"七夕活动_高频曝光未点击人群", state:"available", status:"生成成功", count:128430, devices:["OAID","IDFA"], time:"2026-08-31 18:42", expiry:"2026-11-29", available:true},
-      {id:"AUD-20260830-011", name:"新品发布_核心城市兴趣人群", state:"available", status:"生成成功", count:86412, devices:["OAID","CAID"], time:"2026-08-30 15:08", expiry:"2026-11-28", available:true},
+      {id:"AUD-20260830-011", name:"新品发布_核心城市兴趣人群", state:"available", status:"生成成功", count:86412, devices:["OAID","CAID","Cookie ID"], time:"2026-08-30 15:08", expiry:"2026-11-28", available:true},
       {id:"AUD-20260828-009", name:"夏季大促_点击未转化人群", state:"available", status:"生成成功", count:214709, devices:["IDFA","OAID","IMEI"], time:"2026-08-28 20:16", expiry:"2026-11-26", available:true},
       {id:"AUD-20260827-006", name:"品牌焕新_全量触达人群", state:"available", status:"生成成功", count:567830, devices:["OAID"], time:"2026-08-27 13:25", expiry:"2026-11-25", available:true},
       {id:"AUD-20260826-004", name:"会员日_复访用户", state:"computing", status:"生成中", count:null, devices:["IDFA","OAID"], time:"2026-08-26 11:40", expiry:"—", available:false, reason:"人群仍在生成中"},
-      {id:"AUD-20260518-021", name:"520活动_历史曝光人群", state:"expired", status:"已失效", count:45192, devices:["OAID"], time:"2026-05-18 09:30", expiry:"2026-08-16", available:false, reason:"人群包已失效"}
+      {id:"AUD-20260518-021", name:"520活动_历史曝光人群", state:"expired", status:"已失效", count:45192, devices:["OAID"], time:"2026-05-18 09:30", expiry:"2026-08-16", available:false, reason:"采集数据已超过 90 天有效期"}
     ];
 
     const stateMap = {
@@ -744,19 +767,20 @@
     };
 
     let tasks = [
-      {id:"SDH-TASK-20260901-005", packages:[audiences[0],audiences[1]], status:"ready_upload", dedup:203984, newCount:28416, mapped:0, finalRid:null, creator:"luorong", created:"2026-09-01 10:42", updated:"2026-09-01 10:48", oss:"https://oss.example.com/sdh/increment/20260901/005?signature=demo-a8f21", table:null, progress:0},
-      {id:"SDH-TASK-20260831-017", packages:[audiences[2]], status:"waiting_mapping", dedup:214709, newCount:32784, mapped:24588, finalRid:null, creator:"luorong", created:"2026-08-31 16:20", updated:"2026-09-01 09:52", oss:"https://oss.example.com/sdh/increment/20260831/017?signature=expired-demo", table:null, progress:75},
-      {id:"SDH-TASK-20260830-012", packages:[audiences[3]], status:"completed", dedup:567830, newCount:0, mapped:0, finalRid:541208, creator:"Chen Yu", created:"2026-08-30 14:05", updated:"2026-08-30 14:21", table:"dm_brand_refresh_20260830_012", requestId:"ALI-SDH-982731", progress:100},
-      {id:"SDH-TASK-20260829-009", packages:[audiences[1]], status:"failed", dedup:86412, newCount:9730, mapped:6812, finalRid:null, creator:"Mia", created:"2026-08-29 17:10", updated:"2026-08-30 08:34", oss:"https://oss.example.com/sdh/increment/20260829/009?signature=demo", table:null, progress:70, error:"映射结果校验未通过：仍有 2,918 个设备 ID 未取得有效 RID。", errorStage:"映射更新"},
-      {id:"SDH-TASK-20260828-006", packages:[audiences[0],audiences[2],audiences[3]], status:"table_creating", dedup:823905, newCount:71208, mapped:71208, finalRid:795362, creator:"luorong", created:"2026-08-28 12:10", updated:"2026-09-01 10:31", table:null, requestId:"ALI-SDH-981422", progress:100}
+      {id:"SDH-TASK-20260901-005", name:"七夕&新品核心人群_SDH_0901", packages:[audiences[0],audiences[1]], status:"ready_upload", dedup:203984, newCount:28416, mapped:0, finalRid:null, creator:"luorong", created:"2026-09-01 10:42", updated:"2026-09-01 10:48", inputOss:"oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=20260901_SDH-TASK-20260901-005", outputOss:"oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=rid_map_all_20260901_SDH-TASK-20260901-005/", finalOss:null, table:null, progress:0, retryCount:0, lastPoll:"—", nextPoll:"等待运营配置 SDH"},
+      {id:"SDH-TASK-20260831-017", name:"夏季大促点击未转化_SDH", packages:[audiences[2]], status:"waiting_mapping", dedup:214709, newCount:32784, mapped:0, finalRid:null, creator:"luorong", created:"2026-08-31 16:20", updated:"2026-09-01 09:52", inputOss:"oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=20260831_SDH-TASK-20260831-017", outputOss:"oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=rid_map_all_20260831_SDH-TASK-20260831-017/", finalOss:null, table:null, progress:58, retryCount:0, lastPoll:"2026-09-01 09:00", nextPoll:"2026-09-01 10:00", waited:"17 小时"},
+      {id:"SDH-TASK-20260830-012", name:"品牌焕新全量触达_SDH", packages:[audiences[3]], status:"completed", dedup:567830, newCount:0, mapped:0, finalRid:541208, creator:"Chen Yu", created:"2026-08-30 14:05", updated:"2026-08-30 14:21", inputOss:null, outputOss:null, finalOss:"oss://sdh-engine-ailimama-1/SDH_DM_SDH-TASK-20260830-012_20260830", table:"SDH_DM_SDH-TASK-20260830-012_20260830", httpResponse:"HTTP 200 · success", progress:100, retryCount:0},
+      {id:"SDH-TASK-20260829-009", name:"新品核心城市人群_SDH_重试", packages:[audiences[1]], status:"failed", dedup:86412, newCount:9730, mapped:0, finalRid:null, creator:"Mia", created:"2026-08-29 17:10", updated:"2026-09-01 08:34", inputOss:"oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=20260829_SDH-TASK-20260829-009", outputOss:"oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=rid_map_all_20260829_SDH-TASK-20260829-009/", finalOss:null, table:null, progress:0, retryCount:1, lastPoll:"2026-09-01 08:00", nextPoll:"—", waited:"3 天", error:"RID 映射输出地址等待满 3 天仍无数据，系统自动重试后触发保护阈值。", errorStage:"映射更新"},
+      {id:"SDH-TASK-20260828-006", name:"七夕+大促+焕新人群_SDH", packages:[audiences[0],audiences[2],audiences[3]], status:"table_creating", dedup:823905, newCount:71208, mapped:71208, finalRid:795362, creator:"luorong", created:"2026-08-28 12:10", updated:"2026-09-01 10:31", inputOss:"oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=20260828_SDH-TASK-20260828-006", outputOss:"oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=rid_map_all_20260828_SDH-TASK-20260828-006/", finalOss:"oss://sdh-engine-ailimama-1/SDH_DM_SDH-TASK-20260828-006_20260828", table:null, httpResponse:"等待 HTTP 接口返回", progress:100, retryCount:0}
     ];
 
     let selectedAudienceIds = new Set();
     let detailTaskId = tasks[0].id;
     let messages = [
-      {id:1, taskId:tasks[2].id, unread:true, type:"任务", title:"SDH 人群表创建成功", copy:`表名 ${tasks[2].table}，可前往 SDH 完成授权。`, time:"08-30 14:21"},
-      {id:2, taskId:tasks[3].id, unread:true, type:"任务", title:"SDH 人群上传任务失败", copy:"映射更新阶段失败，请查看详情并重新检测。", time:"08-30 08:34"},
-      {id:3, taskId:null, unread:false, type:"系统", title:"平台维护通知", copy:"数据应用服务将于本周日 02:00 进行例行维护。", time:"08-28 18:00"}
+      {id:1, taskId:tasks[0].id, unread:true, type:"任务", title:"SDH OSS 地址已就绪", copy:`任务“${tasks[0].name}”的输入、输出地址已生成，请填写到 SDH。`, time:"今天 10:48"},
+      {id:2, taskId:tasks[2].id, unread:true, type:"任务", title:"SDH 人群表创建成功", copy:`表名 ${tasks[2].table}，可前往 SDH 完成授权。`, time:"08-30 14:21"},
+      {id:3, taskId:tasks[3].id, unread:false, type:"任务", title:"SDH 人群上传任务失败", copy:"映射输出地址超时，请查看系统重试结果。", time:"今天 08:34"},
+      {id:4, taskId:null, unread:false, type:"系统", title:"平台维护通知", copy:"数据应用服务将于本周日 02:00 进行例行维护。", time:"08-28 18:00"}
     ];
 
     const statusTag = (status) => { const s = stateMap[status]; return `<span class="status ${s.tone}">${s.label}</span>`; };
@@ -792,27 +816,28 @@
       const keyword = document.querySelector("#taskSearch").value.trim().toLowerCase();
       const filter = document.querySelector("#taskStatus").value;
       const filtered = tasks.filter(t => {
-        const hay = `${t.id} ${t.table||""} ${t.packages.map(p=>`${p.name} ${p.id}`).join(" ")}`.toLowerCase();
+        const hay = `${t.name} ${t.id} ${t.table||""} ${t.packages.map(p=>`${p.name} ${p.id}`).join(" ")}`.toLowerCase();
         return (!keyword || hay.includes(keyword)) && (filter === "all" || stateMap[t.status].group === filter);
       });
       document.querySelector("#taskRows").innerHTML = filtered.length ? filtered.map(t => `
-        <tr><td><div class="primary-cell">${t.packages[0].name}${t.packages.length>1?` <span class="subtle">等 ${t.packages.length} 个</span>`:""}</div><div class="secondary-line">${t.id}</div></td>
+        <tr><td><div class="primary-cell" title="${t.name}">${t.name}</div><div class="secondary-line">${t.id}</div></td>
+        <td><div>${t.packages[0].name}${t.packages.length>1?` <span class="subtle">等 ${t.packages.length} 个</span>`:""}</div></td>
         <td>${t.packages.length}</td><td class="number">${fmt(t.dedup)}</td><td class="number">${fmt(t.newCount)}</td><td>${statusTag(t.status)}</td>
-        <td>${t.table?`<button class="btn text copy-table" data-copy="${t.table}">${t.table} ${icon("copy")}</button>`:"—"}</td>
-        <td><div>${t.creator}</div><div class="disabled-note">${t.created}</div></td><td>${t.updated}</td>
-        <td><div class="actions"><button class="btn text view-task" data-id="${t.id}">查看详情</button>${t.status==="ready_upload"?`<button class="btn text copy-oss" data-copy="${t.oss}">复制 OSS 地址</button>`:""}${t.status==="failed"?`<button class="btn text retry-task" data-id="${t.id}">重新检测</button>`:""}</div></td></tr>`).join("") : `<tr><td colspan="9"><div class="empty"><div class="empty-mark">${icon("database")}</div><div class="empty-title">暂无 SDH 上传任务</div><div>返回广告采集人群，选择人群包后发起上传。</div></div></td></tr>`;
+        <td class="table-name-cell">${t.table?`<button class="btn text copy-table table-name-copy" title="${t.table}" data-copy="${t.table}"><span class="table-name-text">${t.table}</span>${icon("copy")}</button>`:"—"}</td>
+        <td>${t.creator}</td><td>${t.created}</td><td>${t.updated}</td>
+        <td><div class="actions"><button class="btn text view-task" data-id="${t.id}">查看详情</button>${t.status==="failed"?`<button class="btn text retry-task" data-id="${t.id}">重新检测</button>`:""}</div></td></tr>`).join("") : `<tr><td colspan="11"><div class="empty"><div class="empty-mark">${icon("database")}</div><div class="empty-title">暂无 SDH 上传任务</div><div>返回广告采集人群，选择人群包后发起上传。</div></div></td></tr>`;
       document.querySelector("#taskTotal").textContent = `共 ${filtered.length} 条`;
       document.querySelectorAll(".view-task").forEach(b => b.addEventListener("click", () => openTask(b.dataset.id)));
-      document.querySelectorAll(".copy-table,.copy-oss").forEach(b => b.addEventListener("click", () => copyText(b.dataset.copy, b.classList.contains("copy-table")?"表名已复制":"OSS 地址已复制")));
+      document.querySelectorAll(".copy-table").forEach(b => b.addEventListener("click", () => copyText(b.dataset.copy, "表名已复制")));
       document.querySelectorAll(".retry-task").forEach(b => b.addEventListener("click", () => retryTask(b.dataset.id)));
     }
 
     const stages = [
       {name:"任务校验", copy:"固化来源快照，校验并去重设备 ID。"},
-      {name:"新增 ID 文件", copy:"比对历史映射；存在新增 ID 时生成 OSS 文件。"},
-      {name:"映射更新", copy:"监测任务批次并校验全部新增 ID 的 RID 映射。"},
+      {name:"新增 ID 文件", copy:"生成新增 ID CSV、输入 OSS 地址和 RID 映射输出 OSS 地址。"},
+      {name:"映射更新", copy:"每小时轮询输出地址；地址下有数据即进入下一阶段，3 天超时自动重试。"},
       {name:"完整人群文件", copy:"合并历史与新增映射，按 RID 去重并生成最终文件。"},
-      {name:"SDH 建表", copy:"调用 SDH 接口并确认表达到可授权状态。"}
+      {name:"SDH 建表", copy:"通过 HTTP 接口创建表，并以接口返回判定成功。"}
     ];
 
     function stageState(task, index) {
@@ -827,16 +852,17 @@
     function renderDetail() {
       const t = tasks.find(x=>x.id===detailTaskId) || tasks[0];
       detailTaskId = t.id;
-      document.querySelector("#detailTitle").textContent = t.packages.length === 1 ? t.packages[0].name : `${t.packages[0].name} 等 ${t.packages.length} 个`;
+      document.querySelector("#detailTitle").textContent = t.name;
       document.querySelector("#detailStatus").innerHTML = statusTag(t.status);
       document.querySelector("#detailMeta").innerHTML = `<span>任务 ID：<strong>${t.id}</strong></span><span>创建人：<strong>${t.creator}</strong></span><span>创建时间：<strong>${t.created}</strong></span><span>最近更新：<strong>${t.updated}</strong></span>`;
       let headerActions = `<button class="btn" data-nav="tasks">返回列表</button>`;
-      if (t.status === "ready_upload") headerActions += `<button class="btn primary" id="headerCopyOss">${icon("copy")}复制 OSS 地址</button>`;
+      if (t.status === "ready_upload") headerActions += `<button class="btn" id="headerCopyInput">${icon("copy")}复制输入地址</button><button class="btn primary" id="headerCopyOutput">${icon("copy")}复制输出地址</button>`;
       if (t.status === "completed") headerActions += `<button class="btn primary" id="headerCopyTable">${icon("copy")}复制表名</button>`;
       if (t.status === "failed") headerActions += `<button class="btn primary" id="headerRetry">${icon("refresh")}重新检测</button>`;
       document.querySelector("#detailHeaderActions").innerHTML = headerActions;
       bindNav();
-      document.querySelector("#headerCopyOss")?.addEventListener("click",()=>copyText(t.oss,"OSS 地址已复制"));
+      document.querySelector("#headerCopyInput")?.addEventListener("click",()=>copyText(t.inputOss,"输入地址已复制"));
+      document.querySelector("#headerCopyOutput")?.addEventListener("click",()=>copyText(t.outputOss,"输出地址已复制"));
       document.querySelector("#headerCopyTable")?.addEventListener("click",()=>copyText(t.table,"表名已复制"));
       document.querySelector("#headerRetry")?.addEventListener("click",()=>retryTask(t.id));
 
@@ -849,33 +875,32 @@
       ];
       document.querySelector("#summaryGrid").innerHTML = metrics.map(m=>`<div class="card metric"><div class="metric-label">${m[0]}</div><div class="metric-value">${m[1]}</div><div class="metric-hint">${m[2]}</div></div>`).join("");
 
-      document.querySelector("#timeline").innerHTML = stages.map((s,i)=>{ const state=stageState(t,i); let copy=s.copy; let time=""; if(state==="done") time="已完成"; if(state==="active") time=t.status==="ready_upload"?"OSS 地址已就绪，等待你到 SDH 上传":"正在后台处理…"; if(state==="failed") {copy=t.error||"处理失败，请查看右侧说明。";time=`失败阶段：${t.errorStage||s.name}`;} return `<div class="timeline-item ${state}"><div class="timeline-node">${state==="done"?"✓":state==="failed"?"!":i+1}</div><div><div class="timeline-title">${s.name}</div><div class="timeline-copy">${copy}</div>${time?`<div class="timeline-time">${time}</div>`:""}</div></div>`; }).join("");
+      document.querySelector("#timeline").innerHTML = stages.map((s,i)=>{ const state=stageState(t,i); let copy=s.copy; let time=""; if(state==="done") time="已完成"; if(state==="active") time=t.status==="ready_upload"?"输入、输出 OSS 地址已就绪，等待运营均填入 SDH":t.status==="waiting_mapping"?`每小时轮询中 · 已等待 ${t.waited||"不足 1 小时"}`:"正在后台处理…"; if(state==="failed") {copy=t.error||"处理失败，请查看右侧说明。";time=`失败阶段：${t.errorStage||s.name}`;} return `<div class="timeline-item ${state}"><div class="timeline-node">${state==="done"?"✓":state==="failed"?"!":i+1}</div><div><div class="timeline-title">${s.name}</div><div class="timeline-copy">${copy}</div>${time?`<div class="timeline-time">${time}</div>`:""}</div></div>`; }).join("");
 
       document.querySelector("#detailPackages").innerHTML = t.packages.map(p=>`<tr><td class="primary-cell">${p.name}</td><td class="secondary-line">${p.id}</td><td>${fmt(p.count)}</td><td><div class="tags">${p.devices.map(d=>`<span class="tag">${d}</span>`).join("")}</div></td><td>${p.time}</td></tr>`).join("");
 
       const incrementCard = document.querySelector("#incrementCard");
       if (t.newCount === 0) {
-        incrementCard.innerHTML = `<div class="card-header"><div><div class="card-title">新增 ID 文件</div><div class="card-desc">本任务无需人工上传。</div></div>${statusTag("completed")}</div><div class="card-body"><div class="notice blue">${icon("check")}<div><strong>已自动跳过</strong><br>全部设备 ID 均存在有效 RID 映射，系统已直接生成完整人群文件。</div></div></div>`;
+        incrementCard.innerHTML = `<div class="card-header"><div><div class="card-title">新增 ID 输入/输出地址</div><div class="card-desc">本任务无需人工配置。</div></div>${statusTag("completed")}</div><div class="card-body"><div class="notice blue">${icon("check")}<div><strong>已自动跳过</strong><br>全部设备 ID 均存在有效 RID 映射，系统已直接生成完整人群文件。</div></div></div>`;
       } else if (["ready_upload","waiting_mapping","audience_generating","table_creating","completed","failed"].includes(t.status)) {
-        const expired = t.status === "waiting_mapping" && t.oss?.includes("expired");
-        incrementCard.innerHTML = `<div class="card-header"><div><div class="card-title">新增 ID 文件</div><div class="card-desc">${fmt(t.newCount)} 个新增设备 ID</div></div>${t.status==="ready_upload"?statusTag("ready_upload"):t.status==="failed"?statusTag("failed"):statusTag("completed")}</div><div class="card-body">
-          ${t.status==="failed"?`<div class="notice red">${icon("alert")}<div><strong>${t.errorStage||"处理"}失败</strong><br>${t.error}</div></div>`:t.status==="ready_upload"?`<div class="notice amber">${icon("info")}<div><strong>下一步由运营完成</strong><br>复制下面地址，到阿里 SDH 上传后等待系统自动检测映射结果。</div></div>`:`<div class="notice blue">${icon("check")}<div><strong>文件已生成</strong><br>系统正在使用同一任务批次监测映射结果。</div></div>`}
-          <div class="code-field">${expired?"地址已失效，请刷新签名地址":(t.oss||"内部文件已生成，前端地址不再需要展示")}</div>
-          <div style="display:flex;gap:8px;margin-top:12px">${t.oss?`<button class="btn primary small" id="copyOss" ${expired?"disabled":""}>${icon("copy")}复制 OSS 地址</button><button class="btn small" id="renewOss">${icon("refresh")}刷新地址</button>`:""}</div>
-          ${t.status==="waiting_mapping"||t.status==="failed"?`<div class="progress"><div class="progress-bar" style="width:${t.progress||0}%"></div></div><div class="progress-copy"><span>已映射 ${fmt(t.mapped)} / ${fmt(t.newCount)}</span><span>${t.progress||0}%</span></div>`:""}
+        incrementCard.innerHTML = `<div class="card-header"><div><div class="card-title">新增 ID 输入/输出 OSS 地址</div><div class="card-desc">CSV · ${fmt(t.newCount)} 个新增设备 ID · 分片不限制</div></div>${t.status==="ready_upload"?statusTag("ready_upload"):t.status==="failed"?statusTag("failed"):statusTag("completed")}</div><div class="card-body">
+          ${t.status==="failed"?`<div class="notice red">${icon("alert")}<div><strong>${t.errorStage||"处理"}失败</strong><br>${t.error}</div></div>`:t.status==="ready_upload"?`<div class="notice amber">${icon("info")}<div><strong>请将两个地址都填写到 SDH</strong><br>输入地址存放新增设备 ID；输出地址由阿里写回设备 ID—RID 映射。系统已发送站内待办通知。</div></div>`:`<div class="notice blue">${icon("clock")}<div><strong>系统每小时轮询输出地址</strong><br>输出地址下出现数据即判定完成；等待满 3 天仍无数据时系统自动重试。</div></div>`}
+          <div class="address-block"><div class="address-head"><div><div class="address-title">新增设备 ID 输入地址</div><div class="address-purpose">存放本次任务提取的新增设备 ID CSV</div></div><button class="btn small" id="copyInputOss">${icon("copy")}复制输入</button></div><div class="address-value">${t.inputOss}</div></div>
+          <div class="address-block"><div class="address-head"><div><div class="address-title">RID 映射输出地址</div><div class="address-purpose">由阿里输出新增设备 ID 与 RID 的映射关系</div></div><button class="btn small" id="copyOutputOss">${icon("copy")}复制输出</button></div><div class="address-value">${t.outputOss}</div></div>
+          <div class="info-list" style="margin-top:14px"><div class="info-row"><div class="info-label">最近轮询</div><div class="info-value">${t.lastPoll||"—"}</div></div><div class="info-row"><div class="info-label">下次轮询</div><div class="info-value">${t.nextPoll||"—"}</div></div><div class="info-row"><div class="info-label">已等待</div><div class="info-value">${t.waited||"—"}</div></div><div class="info-row"><div class="info-label">自动重试</div><div class="info-value">${t.retryCount||0} 次</div></div></div>
         </div>`;
-        document.querySelector("#copyOss")?.addEventListener("click",()=>copyText(t.oss,"OSS 地址已复制"));
-        document.querySelector("#renewOss")?.addEventListener("click",()=>renewOss(t));
+        document.querySelector("#copyInputOss")?.addEventListener("click",()=>copyText(t.inputOss,"输入地址已复制"));
+        document.querySelector("#copyOutputOss")?.addEventListener("click",()=>copyText(t.outputOss,"输出地址已复制"));
       } else {
-        incrementCard.innerHTML = `<div class="card-header"><div><div class="card-title">新增 ID 文件</div><div class="card-desc">增量判断完成后展示。</div></div></div><div class="card-body"><div class="notice">${icon("clock")}<div>系统正在校验来源快照和历史映射，请稍候。</div></div></div>`;
+        incrementCard.innerHTML = `<div class="card-header"><div><div class="card-title">新增 ID 输入/输出地址</div><div class="card-desc">增量判断完成后展示。</div></div></div><div class="card-body"><div class="notice">${icon("clock")}<div>系统正在校验 90 天有效期、支持类型、高频无效 ID 和历史映射，请稍候。</div></div></div>`;
       }
 
       const tableCard = document.querySelector("#tableCard");
       if (t.status === "completed") {
-        tableCard.innerHTML = `<div class="card-header"><div><div class="card-title">SDH 表信息</div><div class="card-desc">表已达到可用于后续授权的状态。</div></div>${statusTag("completed")}</div><div class="card-body"><div class="info-list"><div class="info-row"><div class="info-label">表名</div><div class="info-value">${t.table}</div></div><div class="info-row"><div class="info-label">平台请求 ID</div><div class="info-value">${t.requestId||"—"}</div></div><div class="info-row"><div class="info-label">完成时间</div><div class="info-value">${t.updated}</div></div></div><button class="btn primary" id="copyTable" style="width:100%;margin-top:16px">${icon("copy")}复制表名</button><div class="notice" style="margin-top:12px">${icon("info")}<div>下一步请到 SDH 完成表授权。本期不支持在 DM 内授权或创建计算任务。</div></div></div>`;
+        tableCard.innerHTML = `<div class="card-header"><div><div class="card-title">最终人群包与 SDH 表</div><div class="card-desc">HTTP 建表接口已返回成功。</div></div>${statusTag("completed")}</div><div class="card-body"><div class="info-list"><div class="info-row"><div class="info-label">表名</div><div class="info-value">${t.table}</div></div><div class="info-row"><div class="info-label">最终人群包</div><div class="info-value" style="font-family:ui-monospace,monospace;font-size:11px">${t.finalOss}</div></div><div class="info-row"><div class="info-label">HTTP 返回</div><div class="info-value">${t.httpResponse||"success"}</div></div><div class="info-row"><div class="info-label">完成时间</div><div class="info-value">${t.updated}</div></div></div><button class="btn primary" id="copyTable" style="width:100%;margin-top:16px">${icon("copy")}复制表名</button><div class="notice" style="margin-top:12px">${icon("info")}<div>下一步请到 SDH 完成表授权。本期不支持在 DM 内授权或创建计算任务。</div></div></div>`;
         document.querySelector("#copyTable").addEventListener("click",()=>copyText(t.table,"表名已复制"));
       } else if (t.status === "table_creating") {
-        tableCard.innerHTML = `<div class="card-header"><div><div class="card-title">SDH 表信息</div><div class="card-desc">正在确认建表结果。</div></div>${statusTag("table_creating")}</div><div class="card-body"><div class="info-row"><div class="info-label">平台请求 ID</div><div class="info-value">${t.requestId||"等待返回"}</div></div><div class="notice blue" style="margin-top:14px">${icon("clock")}<div>接口已受理，系统会先查询原请求结果再决定是否重试，避免生成重复表。</div></div></div>`;
+        tableCard.innerHTML = `<div class="card-header"><div><div class="card-title">最终人群包与 SDH 表</div><div class="card-desc">正在等待 HTTP 建表接口返回。</div></div>${statusTag("table_creating")}</div><div class="card-body"><div class="info-list"><div class="info-row"><div class="info-label">预期表名</div><div class="info-value">${t.finalOss?.split("/").pop()||"按任务 ID 与日期生成"}</div></div><div class="info-row"><div class="info-label">最终人群包</div><div class="info-value" style="font-family:ui-monospace,monospace;font-size:11px">${t.finalOss||"生成中"}</div></div><div class="info-row"><div class="info-label">HTTP 返回</div><div class="info-value">${t.httpResponse||"等待返回"}</div></div></div><div class="notice blue" style="margin-top:14px">${icon("clock")}<div>系统以 HTTP 接口返回判定建表是否成功；请求携带任务级幂等键，避免生成重复表。</div></div></div>`;
       } else {
         tableCard.innerHTML = `<div class="card-header"><div><div class="card-title">SDH 表信息</div><div class="card-desc">完成映射与人群文件后自动创建。</div></div></div><div class="card-body"><div class="empty" style="padding:20px 10px"><div class="empty-mark">${icon("database")}</div><div class="empty-title">尚未创建 SDH 表</div><div>当前阶段完成后，系统将自动继续处理。</div></div></div>`;
       }
@@ -896,37 +921,57 @@
 
     function openUploadModal() {
       if (!selectedAudienceIds.size) return;
+      const selected = audiences.filter(a=>selectedAudienceIds.has(a.id));
+      document.querySelector("#taskNameInput").value = makeDefaultTaskName(selected);
       renderModalSelection();
       document.querySelector("#uploadModal").classList.add("open");
       document.body.style.overflow = "hidden";
+      setTimeout(()=>document.querySelector("#taskNameInput").focus(),120);
     }
     function closeUploadModal() { document.querySelector("#uploadModal").classList.remove("open"); document.body.style.overflow = ""; }
+    function makeDefaultTaskName(selected) {
+      if (!selected.length) return "";
+      const suffix = selected.length > 1 ? `等${selected.length}个_SDH_20260901` : "_SDH_20260901";
+      return `${selected[0].name}${suffix}`.slice(0,50);
+    }
+    function validateTaskName() {
+      const input = document.querySelector("#taskNameInput");
+      const value = input.value.trim();
+      const valid = value.length >= 1 && value.length <= 50;
+      document.querySelector("#taskNameCount").textContent = input.value.length;
+      document.querySelector("#taskNameError").classList.toggle("show", !valid);
+      document.querySelector("#confirmUpload").disabled = selectedAudienceIds.size === 0 || !valid;
+      return valid;
+    }
     function renderModalSelection() {
       const selected = audiences.filter(a=>selectedAudienceIds.has(a.id));
       document.querySelector("#modalCount").textContent = selected.length;
-      document.querySelector("#modalAudienceList").innerHTML = selected.length ? selected.map(a=>`<div class="selected-item"><div><div class="selected-name">${a.name}</div><div class="selected-meta">${a.id}</div></div><div class="number">${fmt(a.count)} 人</div><div class="tags">${a.devices.slice(0,2).map(d=>`<span class="tag">${d}</span>`).join("")}</div><button class="icon-button remove-modal-item" data-id="${a.id}" aria-label="移除${a.name}">${icon("x")}</button></div>`).join("") : `<div class="empty" style="padding:28px">请至少保留一个人群包</div>`;
-      document.querySelector("#confirmUpload").disabled = selected.length === 0;
+      document.querySelector("#modalAudienceList").innerHTML = selected.length ? selected.map(a=>`<div class="selected-item"><div><div class="selected-name">${a.name}</div><div class="selected-meta">${a.id}</div></div><div class="number">${fmt(a.count)} 人</div><div class="tags">${a.devices.map(d=>`<span class="tag">${d}</span>`).join("")}</div><button class="icon-button remove-modal-item" data-id="${a.id}" aria-label="移除${a.name}">${icon("x")}</button></div>`).join("") : `<div class="empty" style="padding:28px">请至少保留一个人群包</div>`;
+      const supported = new Set(["IMEI","IDFA","OAID","CAID"]);
+      const unsupported = [...new Set(selected.flatMap(a=>a.devices).filter(d=>!supported.has(d)))];
+      document.querySelector("#modalFilterNotice").innerHTML = unsupported.length ? `<div class="notice amber" style="margin-bottom:14px">${icon("alert")}<div><strong>将过滤不支持的设备类型</strong><br>${unsupported.join("、")} 不会进入任务；其余 IMEI/IDFA/OAID 使用 MD5，CAID 使用原值。系统还会过滤频次 ≥ 10,000 的无效 ID。</div></div>` : "";
+      validateTaskName();
       document.querySelectorAll(".remove-modal-item").forEach(b=>b.addEventListener("click",()=>{ selectedAudienceIds.delete(b.dataset.id); renderModalSelection(); renderAudiences(); }));
     }
 
     function confirmUpload() {
       const btn = document.querySelector("#confirmUpload");
       const selected = audiences.filter(a=>selectedAudienceIds.has(a.id));
-      if (!selected.length) return;
+      const taskName = document.querySelector("#taskNameInput").value.trim();
+      if (!selected.length || !validateTaskName()) return;
       btn.disabled = true; btn.innerHTML = `${icon("refresh")}正在创建任务…`;
       setTimeout(()=>{
         const serial = String(tasks.length + 6).padStart(3,"0");
         const total = selected.reduce((sum,a)=>sum+(a.count||0),0);
         const dedup = Math.round(total * (selected.length > 1 ? 0.92 : 1));
-        const created = {id:`SDH-TASK-20260901-${serial}`, packages:selected, status:"validating", dedup, newCount:null, mapped:0, finalRid:null, creator:"luorong", created:"2026-09-01 11:26", updated:"2026-09-01 11:26", oss:null, table:null, progress:0};
+        const created = {id:`SDH-TASK-20260901-${serial}`, name:taskName, packages:selected, status:"validating", dedup, newCount:null, mapped:0, finalRid:null, creator:"luorong", created:"2026-09-01 11:26", updated:"2026-09-01 11:26", inputOss:null, outputOss:null, finalOss:null, table:null, progress:0, retryCount:0, lastPoll:"—", nextPoll:"—"};
         tasks.unshift(created); detailTaskId=created.id; selectedAudienceIds.clear(); closeUploadModal(); btn.disabled=false; btn.innerHTML=`${icon("upload")}确认上传`; renderAudiences(); showToast("任务创建成功","系统正在校验人群快照与历史映射。","success"); showPage("detail");
         setTimeout(()=>{ const t=tasks.find(x=>x.id===created.id); if(t&&t.status==="validating"){t.status="file_generating";t.newCount=Math.max(1,Math.round(t.dedup*.14));t.updated="2026-09-01 11:27";renderDetail();} },1000);
-        setTimeout(()=>{ const t=tasks.find(x=>x.id===created.id); if(t&&t.status==="file_generating"){t.status="ready_upload";t.oss=`https://oss.example.com/sdh/increment/20260901/${serial}?signature=demo-new`;t.updated="2026-09-01 11:28";renderDetail();showToast("新增 ID 文件已就绪","可复制 OSS 地址并前往 SDH 上传。","success");} },2300);
+        setTimeout(()=>{ const t=tasks.find(x=>x.id===created.id); if(t&&t.status==="file_generating"){t.status="ready_upload";t.inputOss=`oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=20260901_${t.id}`;t.outputOss=`oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=rid_map_all_20260901_${t.id}/`;t.updated="2026-09-01 11:28";t.nextPoll="等待运营配置 SDH";messages.unshift({id:Date.now(),taskId:t.id,unread:true,type:"任务",title:"SDH OSS 地址已就绪",copy:`任务“${t.name}”的输入、输出地址已生成，请填写到 SDH。`,time:"刚刚"});renderMessages();renderDetail();showToast("输入、输出 OSS 地址已就绪","请将两个地址都填写到 SDH；站内待办消息已发送。","success");} },2300);
       },700);
     }
 
-    function retryTask(id) { const t=tasks.find(x=>x.id===id); if(!t)return; t.status="waiting_mapping"; t.error=null; t.errorStage=null; t.updated="2026-09-01 11:30"; t.progress=Math.max(t.progress||0,70); detailTaskId=id; renderTasks(); if(document.querySelector("#page-detail").classList.contains("active"))renderDetail(); showToast("已重新开始检测","系统将复用原任务批次，不会创建重复表。","success"); }
-    function renewOss(t) { t.oss=`https://oss.example.com/sdh/increment/renewed/${t.id}?signature=${Date.now().toString(36)}`; renderDetail(); showToast("地址已刷新","业务文件未改变，仅更新访问签名。","success"); }
+    function retryTask(id) { const t=tasks.find(x=>x.id===id); if(!t)return; t.status="waiting_mapping"; t.error=null; t.errorStage=null; t.updated="2026-09-01 11:30"; t.retryCount=(t.retryCount||0)+1; t.lastPoll="2026-09-01 11:00"; t.nextPoll="2026-09-01 12:00"; t.waited="新等待窗口已开始"; detailTaskId=id; renderTasks(); if(document.querySelector("#page-detail").classList.contains("active"))renderDetail(); showToast("已重新开始小时级轮询","系统复用原任务和两个 OSS 地址，3 天超时后仍会自动重试。","success"); }
 
     async function copyText(text, title) {
       if (!text) return;
@@ -950,12 +995,12 @@
       if(!detailVisible){openTask(detailTaskId);showToast("已打开任务详情","现在可以切换状态查看各阶段界面。","success");}
       const t=tasks.find(x=>x.id===detailTaskId); if(!t)return;
       t.status=status;t.updated="2026-09-01 11:36";
-      if(status==="ready_upload"){t.newCount=t.newCount??28416;t.mapped=0;t.progress=0;t.oss=t.oss||"https://oss.example.com/sdh/increment/demo?signature=interactive";t.error=null;t.table=null;}
-      if(status==="waiting_mapping"){t.newCount=t.newCount??28416;t.mapped=Math.round(t.newCount*.68);t.progress=68;t.oss=t.oss||"https://oss.example.com/sdh/increment/demo?signature=interactive";t.error=null;t.table=null;}
-      if(status==="table_creating"){t.newCount=t.newCount??28416;t.mapped=t.newCount;t.progress=100;t.finalRid=Math.round((t.dedup||203984)*.96);t.requestId="ALI-SDH-DEMO-2026";t.error=null;t.table=null;}
-      if(status==="completed"){t.newCount=t.newCount??28416;t.mapped=t.newCount;t.progress=100;t.finalRid=t.finalRid||Math.round((t.dedup||203984)*.96);t.table=`dm_audience_${t.id.slice(-8).replaceAll("-","").toLowerCase()}`;t.requestId=t.requestId||"ALI-SDH-DEMO-2026";t.error=null;}
-      if(status==="failed"){t.newCount=t.newCount??28416;t.mapped=Math.round(t.newCount*.72);t.progress=72;t.error="映射结果校验未通过：仍有部分设备 ID 未取得有效 RID。";t.errorStage="映射更新";t.table=null;}
-      if(status==="validating"){t.newCount=null;t.mapped=0;t.progress=0;t.finalRid=null;t.table=null;t.error=null;t.requestId=null;}
+      if(status==="ready_upload"){t.newCount=t.newCount??28416;t.mapped=0;t.progress=0;t.inputOss=t.inputOss||`oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=20260901_${t.id}`;t.outputOss=t.outputOss||`oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=rid_map_all_20260901_${t.id}/`;t.nextPoll="等待运营配置 SDH";t.lastPoll="—";t.waited="—";t.error=null;t.table=null;}
+      if(status==="waiting_mapping"){t.newCount=t.newCount??28416;t.mapped=0;t.progress=0;t.inputOss=t.inputOss||`oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=20260901_${t.id}`;t.outputOss=t.outputOss||`oss://sdh-engine-ailimama-1/sdh_etl_secure_id_rm_data/ds=rid_map_all_20260901_${t.id}/`;t.lastPoll="2026-09-01 11:00";t.nextPoll="2026-09-01 12:00";t.waited="9 小时";t.error=null;t.table=null;}
+      if(status==="table_creating"){t.newCount=t.newCount??28416;t.mapped=t.newCount;t.progress=100;t.finalRid=Math.round((t.dedup||203984)*.96);t.finalOss=`oss://sdh-engine-ailimama-1/SDH_DM_${t.id}_20260901`;t.httpResponse="等待 HTTP 接口返回";t.error=null;t.table=null;}
+      if(status==="completed"){t.newCount=t.newCount??28416;t.mapped=t.newCount;t.progress=100;t.finalRid=t.finalRid||Math.round((t.dedup||203984)*.96);t.table=`SDH_DM_${t.id}_20260901`;t.finalOss=`oss://sdh-engine-ailimama-1/${t.table}`;t.httpResponse="HTTP 200 · success";t.error=null;}
+      if(status==="failed"){t.newCount=t.newCount??28416;t.mapped=0;t.progress=0;t.retryCount=Math.max(1,t.retryCount||0);t.lastPoll="2026-09-01 11:00";t.nextPoll="—";t.waited="3 天";t.error="RID 映射输出地址等待满 3 天仍无数据，系统自动重试后触发保护阈值。";t.errorStage="映射更新";t.table=null;}
+      if(status==="validating"){t.newCount=null;t.mapped=0;t.progress=0;t.finalRid=null;t.table=null;t.error=null;t.httpResponse=null;t.inputOss=null;t.outputOss=null;t.finalOss=null;t.lastPoll="—";t.nextPoll="—";t.waited="—";}
       renderDetail();renderTasks();showToast("原型状态已切换",stateMap[status].label,"success");
     }
 
@@ -967,6 +1012,7 @@
     document.querySelector("#clearSelection").addEventListener("click",()=>{selectedAudienceIds.clear();renderAudiences();});
     document.querySelector("#openUpload").addEventListener("click",openUploadModal);
     document.querySelectorAll("[data-close-modal]").forEach(el=>el.addEventListener("click",closeUploadModal));
+    document.querySelector("#taskNameInput").addEventListener("input",validateTaskName);
     document.querySelector("#confirmUpload").addEventListener("click",confirmUpload);
     document.querySelector("#taskSearch").addEventListener("input",renderTasks);
     document.querySelector("#taskStatus").addEventListener("change",renderTasks);
